@@ -3,6 +3,7 @@
 <head>
   <title></title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
+  <script src="javascripts/vendor/underscore-min.js"></script>
   <script>
     UTIL = {
       fire : function(func, funcname, args) {
@@ -18,7 +19,7 @@
         UTIL.fire('mill')
         UTIL.fire('mill', 'run')
       }
-    };
+    }
 
     GAME = {
       mill : {
@@ -28,7 +29,9 @@
           this.currentPlayer = this.player1
           this.noCatchCountdown = 0 // 50 moves without a catch = tie
           this.threePiecesCountdown = 0 // 10 moves when both players only have 10 pieces remaining = tie
-          this.board = new Array(24)
+          this.boardSize = boardSize = 24
+          this.board = []
+          while(boardSize--) this.board.push(0)
           this.graph = [
                           [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10],
                           [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [0, 1], [12, 3],
@@ -50,43 +53,54 @@
 
           setTimeout(function(_this) { _this.run() }, 5000, this)
         },
+        newGame : function() {
+          console.log('New game')
+          this.init
+          this.run
+        },
         pickPosition : function() {
-          if (this.currentPlayer.type == 'AI') {
-            if (this.currentPlayer.stockPieces == 9) {
-              var position = Math.floor(Math.random()*24) // because this is the player's 1st round
+          var position
+          var isAI = this.currentPlayer.type == 'AI'
+          if (isAI) {
+            var isFirstRound = this.currentPlayer.stockPieces == 9
+            if (isFirstRound) {
+              position = _.random(this.boardSize) // because this is the player's 1st round
             } else {
-              var position = undefined
-              for (var i = 0; i < 24; i++) {
-                if (this.board[i] != this.currentPlayer.marker) continue
+              var positionCurrentPlayer
+              _.each(this.board, function(marker, index) {
+                markerCurrentPlayer = marker == this.currentPlayer.marker
+                if (markerCurrentPlayer) {
+                  // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
+                  _.each(this.graph, function(element) {
+                    if(element[0] == index && this.board[element[1]] === 0)
+                      position = element[1]
+                    else if (element[1] == index && this.board[element[0] === 0])
+                      position = element[0]
+                  }, this)
 
-                // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
-                for (var j = 0; j < this.graphLength; j++) {
-                  if (this.graph[j][0] == i && this.board[this.graph[j][1]] === undefined)
-                    var position = this.graph[j][1]
-                  else if (this.graph[j][1] == i && this.board[this.graph[j][0]] === undefined)
-                    var position = this.graph[j][0]
+                  // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
                 }
+              }, this)
 
-                // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
-              }
-
-              if (position === undefined) { // if all pieces are surrounded and no position was found
-                var position = Math.floor(Math.random()*24)
+              if (!position) { // if all pieces are surrounded and no position was found
+                position = _.random(this.boardSize)
               }
             }
           } else {
             // setTimeout(function() {}, 250000) // UNCOMMENT THIS LINE TO PREVENT CHROME FROM PROMPTING
 
             // ----------------------------- TODO: create a graphical interface -----------------------------
-            var position = prompt('Pick a position between 0 and 23')
+            position = prompt('Pick a position between 0 and ' + (this.boardSize - 1))
             //-----------------------------------------------------------------------------------------------
           }
           this.setPieceOnPosition(position)
         },
         setPieceOnPosition : function(position) {
-          if (position === undefined || this.board[position] != undefined || position < 0 || position > 23)
+          console.log(position);
+          var badPosition = !position || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1)
+          if (badPosition) {
             this.pickPosition()
-          else {
+          } else {
             this.board[position] = this.currentPlayer.marker
             this.currentPlayer.stockPieces--
           }
@@ -98,14 +112,12 @@
             this.currentPlayer = this.player1
         },
         checkPieces : function() {
-          var piecesOnBoard = 0
-          for (var i = 0; i < 24; i++) { // for each current player's piece on board
-            if (this.board[i] == this.currentPlayer.marker)
-              piecesOnBoard++
-          }
+          var piecesOnBoard = _.filter(this.board, function(marker) {
+            return marker == this.currentPlayer.marker
+          }, this).length
+
           if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
-            this.init
-            this.run
+            this.newGame
           }
         }
       }
