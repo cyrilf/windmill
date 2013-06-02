@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title></title>
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
+  <script>
+    UTIL = {
+      fire : function(func, funcname, args) {
+
+        var namespace = GAME
+
+        funcname = (funcname === undefined) ? 'init' : funcname
+        if (func !== '' && namespace[func] && typeof namespace[func][funcname] == 'function') {
+          namespace[func][funcname](args)
+        }
+      },
+      loadEvents : function() {
+        UTIL.fire('mill')
+        UTIL.fire('mill', 'run')
+      }
+    };
+
+    GAME = {
+      mill : {
+        init : function() {
+          this.player1 = new Player('AI', 1)
+          this.player2 = new Player('human', 2)
+          this.currentPlayer = this.player1
+          this.noCatchCountdown = 0 // 50 moves without a catch = tie
+          this.threePiecesCountdown = 0 // 10 moves when both players only have 10 pieces remaining = tie
+          this.board = new Array(24)
+          this.graph = [
+                          [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10],
+                          [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [0, 1], [12, 3],
+                          [14, 5], [8, 16], [16, 17], [17, 18], [18, 19], [19, 20], [0, 1], [20, 21], [21, 22],
+                          [22, 23], [0, 1], [18, 10], [20, 12], [22, 14]
+                       ]
+          this.graphLength = this.graph.length
+        },
+        run : function() {
+          console.log(this.currentPlayer)
+
+          this.checkPieces()
+
+          this.pickPosition()
+
+          console.log(this.board)
+
+          this.changePlayer()
+
+          setTimeout(function(_this) { _this.run() }, 5000, this)
+        },
+        pickPosition : function() {
+          if (this.currentPlayer.type == 'AI') {
+            if (this.currentPlayer.stockPieces == 9) {
+              var position = Math.floor(Math.random()*24) // because this is the player's 1st round
+            } else {
+              var position = undefined
+              for (var i = 0; i < 24; i++) {
+                if (this.board[i] != this.currentPlayer.marker) continue
+
+                // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
+                for (var j = 0; j < this.graphLength; j++) {
+                  if (this.graph[j][0] == i && this.board[this.graph[j][1]] === undefined)
+                    var position = this.graph[j][1]
+                  else if (this.graph[j][1] == i && this.board[this.graph[j][0]] === undefined)
+                    var position = this.graph[j][0]
+                }
+
+                // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
+              }
+
+              if (position === undefined) { // if all pieces are surrounded and no position was found
+                var position = Math.floor(Math.random()*24)
+              }
+            }
+          } else {
+            // setTimeout(function() {}, 250000) // UNCOMMENT THIS LINE TO PREVENT CHROME FROM PROMPTING
+
+            // ----------------------------- TODO: create a graphical interface -----------------------------
+            var position = prompt('Pick a position between 0 and 23')
+            //-----------------------------------------------------------------------------------------------
+          }
+          this.setPieceOnPosition(position)
+        },
+        setPieceOnPosition : function(position) {
+          if (position === undefined || this.board[position] != undefined || position < 0 || position > 23)
+            this.pickPosition()
+          else {
+            this.board[position] = this.currentPlayer.marker
+            this.currentPlayer.stockPieces--
+          }
+        },
+        changePlayer : function() {
+          if (this.currentPlayer == this.player1)
+            this.currentPlayer = this.player2
+          else
+            this.currentPlayer = this.player1
+        },
+        checkPieces : function() {
+          var piecesOnBoard = 0
+          for (var i = 0; i < 24; i++) { // for each current player's piece on board
+            if (this.board[i] == this.currentPlayer.marker)
+              piecesOnBoard++
+          }
+          if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
+            this.init
+            this.run
+          }
+        }
+      }
+    }
+
+    function Player(type, marker) {
+      this.type = type
+      this.stockPieces = 9
+      this.marker = marker
+    }
+
+    $(document).ready(UTIL.loadEvents)
+
+    //--------------- GRAPH: DO NOT DELETE THIS SCHEMA ------------
+    //     0------------1------------2
+    //     |            |            |
+    //     |   9-------10------11    |
+    //     |   |        |       |    |
+    //     |   |   17--18--19   |    |
+    //     |   |   |        |   |    |
+    //     7---8---16      20--12----3
+    //     |   |   |        |   |    |
+    //     |   |   23--22--21   |    |
+    //     |   |        |       |    |
+    //     |   15------14------13    |
+    //     |            |            |
+    //     6------------5------------4
+  </script>
+</head>
+<body>
+
+</body>
+</html>
