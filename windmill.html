@@ -4,6 +4,7 @@
   <title></title>
   <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
   <script src="javascripts/vendor/underscore-min.js"></script>
+  <script src="javascripts/simpleClass.js"></script>
   <script>
     UTIL = {
       fire : function(func, funcname, args) {
@@ -24,8 +25,8 @@
     GAME = {
       mill : {
         init : function() {
-          this.player1 = new Player('AI', 1)
-          this.player2 = new Player('human', 2)
+          this.player1 = new AI(1)
+          this.player2 = new Human(2)
           this.currentPlayer = this.player1
           this.noCatchCountdown = 0 // 50 moves without a catch = tie
           this.threePiecesCountdown = 0 // 10 moves when both players only have 10 pieces remaining = tie
@@ -34,9 +35,9 @@
           while(boardSize--) this.board.push(0)
           this.graph = [
                           [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10],
-                          [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [0, 1], [12, 3],
-                          [14, 5], [8, 16], [16, 17], [17, 18], [18, 19], [19, 20], [0, 1], [20, 21], [21, 22],
-                          [22, 23], [0, 1], [18, 10], [20, 12], [22, 14]
+                          [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [12, 3],
+                          [14, 5], [8, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22],
+                          [22, 23], [18, 10], [20, 12], [22, 14]
                        ]
           this.graphLength = this.graph.length
         },
@@ -59,40 +60,7 @@
           this.run
         },
         pickPosition : function() {
-          var position
-          var isAI = this.currentPlayer.type == 'AI'
-          if (isAI) {
-            var isFirstRound = this.currentPlayer.stockPieces == 9
-            if (isFirstRound) {
-              position = _.random(this.boardSize) // because this is the player's 1st round
-            } else {
-              var positionCurrentPlayer
-              _.each(this.board, function(marker, index) {
-                markerCurrentPlayer = marker == this.currentPlayer.marker
-                if (markerCurrentPlayer) {
-                  // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
-                  _.each(this.graph, function(element) {
-                    if(element[0] == index && this.board[element[1]] === 0)
-                      position = element[1]
-                    else if (element[1] == index && this.board[element[0] === 0])
-                      position = element[0]
-                  }, this)
-
-                  // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
-                }
-              }, this)
-
-              if (!position) { // if all pieces are surrounded and no position was found
-                position = _.random(this.boardSize)
-              }
-            }
-          } else {
-            // setTimeout(function() {}, 250000) // UNCOMMENT THIS LINE TO PREVENT CHROME FROM PROMPTING
-
-            // ----------------------------- TODO: create a graphical interface -----------------------------
-            position = prompt('Pick a position between 0 and ' + (this.boardSize - 1))
-            //-----------------------------------------------------------------------------------------------
-          }
+          var position = this.currentPlayer.pickPosition()
           this.setPieceOnPosition(position)
         },
         setPieceOnPosition : function(position) {
@@ -123,11 +91,60 @@
       }
     }
 
-    function Player(type, marker) {
-      this.type = type
-      this.stockPieces = 9
-      this.marker = marker
-    }
+    var Player = Class.extend({
+      init: function(type, marker) {
+        this.type = type
+        this.stockPieces = 9
+        this.marker = marker
+      }
+    })
+
+    var Human = Player.extend({
+      init: function(marker) {
+        this._super('human', marker)
+      },
+      pickPosition: function() {
+        // ----------------------------- TODO: create a graphical interface -----------------------------
+        return prompt('Pick a position between 0 and ' + (GAME.mill.boardSize - 1))
+        //-----------------------------------------------------------------------------------------------
+
+      }
+    })
+
+    var AI = Player.extend({
+      init: function(marker) {
+        this._super('AI', marker)
+      },
+      pickPosition: function() {
+        var position
+        var isFirstRound = this.stockPieces == 9
+        if (isFirstRound) {
+          position = _.random(GAME.mill.boardSize) // because this is the player's 1st round
+        } else {
+          var positionCurrentPlayer
+
+          _.each(GAME.mill.board, function(marker, index) {
+            markerCurrentPlayer = marker == this.marker
+            if (markerCurrentPlayer) {
+              // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
+              _.each(GAME.mill.graph, function(element) {
+                if(element[0] == index && GAME.mill.board[element[1]] === 0)
+                  position = element[1]
+                else if (element[1] == index && GAME.mill.board[element[0] === 0])
+                  position = element[0]
+              })
+
+              // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
+            }
+          }, this)
+
+          if (!position) { // if all pieces are surrounded and no position was found
+            position = _.random(GAME.mill.boardSize)
+          }
+        }
+        return position
+      }
+    })
 
     $(document).ready(UTIL.loadEvents)
 
