@@ -64,13 +64,34 @@
           this.setPieceOnPosition(position)
         },
         setPieceOnPosition : function(position) {
+          var currentPlayer = this.currentPlayer
           console.log(position);
           var badPosition = !position || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1)
           if (badPosition) {
             this.pickPosition()
           } else {
-            this.board[position] = this.currentPlayer.marker
-            this.currentPlayer.stockPieces--
+            var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value
+            var isMovingPhase = currentPlayer.phase.value === PHASE.MOVING.value
+            var isFlyingPhase = currentPlayer.phase.value === PHASE.FLYING.value
+
+            if(isPlacingPhase) {
+              this.board[position] = currentPlayer.marker
+              currentPlayer.stockPieces--
+
+              var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0
+              if(playerHasNoPiecesInStock) {
+                currentPlayer.phase = PHASE.MOVING
+              }
+            } else if(isMovingPhase) {
+              var playerHasLessThanThreePieces = this.countPiecesOnBoard() <= 3
+              if(playerHasLessThanThreePieces) {
+                currentPlayer.phase = PHASE.FLYING
+              }
+
+              // Implement me (check for a valid movement)
+            } else if(isFlyingPhase) {
+              // Implement me (check for a valid movement)
+            }
           }
         },
         changePlayer : function() {
@@ -79,11 +100,15 @@
           else
             this.currentPlayer = this.player1
         },
-        checkPieces : function() {
+        countPiecesOnBoard: function() {
           var piecesOnBoard = _.filter(this.board, function(marker) {
             return marker == this.currentPlayer.marker
           }, this).length
 
+          return piecesOnBoard
+        },
+        checkPieces : function() {
+          var piecesOnBoard = this.countPiecesOnBoard()
           if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
             this.newGame
           }
@@ -91,11 +116,22 @@
       }
     }
 
+    /**
+     * Differents phases of the game
+     * @type {Object}
+     */
+    var PHASE = {
+      PLACING: {value: 0, name:'Placing pieces'},
+      MOVING:  {value: 1, name:'Moving pieces'},
+      FLYING:  {value: 2, name:'Flying'}
+    }
+
     var Player = Class.extend({
       init: function(type, marker) {
         this.type = type
         this.stockPieces = 9
         this.marker = marker
+        this.phase = PHASE.PLACING
       }
     })
 
@@ -121,28 +157,52 @@
         if (isFirstRound) {
           position = _.random(GAME.mill.boardSize) // because this is the player's 1st round
         } else {
-          var positionCurrentPlayer
-
-          _.each(GAME.mill.board, function(marker, index) {
-            markerCurrentPlayer = marker == this.marker
-            if (markerCurrentPlayer) {
-              // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
-              _.each(GAME.mill.graph, function(element) {
-                if(element[0] == index && GAME.mill.board[element[1]] === 0)
-                  position = element[1]
-                else if (element[1] == index && GAME.mill.board[element[0] === 0])
-                  position = element[0]
-              })
-
-              // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
-            }
-          }, this)
-
-          if (!position) { // if all pieces are surrounded and no position was found
-            position = _.random(GAME.mill.boardSize)
+          switch(this.phase) {
+            case PHASE.PLACING:
+              position = this.findPlacingPosition()
+              break
+            case PHASE.MOVING:
+              position = this.findMovingPosition()
+              break
+            case PHASE.FLYING:
+              position = this.findFlyingPosition()
+              break
+            default:
+              position = this.findPlacingPosition()
           }
         }
         return position
+      },
+      findPlacingPosition: function() {
+        var positionCurrentPlayer, position
+        _.each(GAME.mill.board, function(marker, index) {
+          markerCurrentPlayer = marker == this.marker
+          if (markerCurrentPlayer) {
+            // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
+            _.each(GAME.mill.graph, function(element) {
+              if(element[0] == index && GAME.mill.board[element[1]] === 0)
+                position = element[1]
+              else if (element[1] == index && GAME.mill.board[element[0] === 0])
+                position = element[0]
+            })
+
+            // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
+          }
+        }, this)
+
+        if (!position) { // if all pieces are surrounded and no position was found
+          position = _.random(GAME.mill.boardSize)
+        }
+
+        return position
+      },
+      findMovingPosition: function() {
+        console.log('Implement me !');
+        return _.random(GAME.mill.boardSize)
+      },
+      findFlyingPosition: function() {
+        console.log('Implement me !');
+        return _.random(GAME.mill.boardSize)
       }
     })
 
