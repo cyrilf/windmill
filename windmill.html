@@ -1,230 +1,74 @@
 <!DOCTYPE html>
-<html>
+<html ng-app="ngWindmill" ng-controller='ngWindmillCtrl'>
 <head>
-  <title></title>
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.1/jquery.min.js"></script>
-  <script src="javascripts/vendor/underscore-min.js"></script>
-  <script src="javascripts/simpleClass.js"></script>
-  <script>
-    UTIL = {
-      fire : function(func, funcname, args) {
+  <title>{{title}}</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <meta name="description" content="">
+  <meta name="author" content="">
 
-        var namespace = GAME
+  <!-- CSS -->
+  <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+  <style type="text/css">
+    html,
+    body {
+      height: 100%;
+    }
 
-        funcname = (funcname === undefined) ? 'init' : funcname
-        if (func !== '' && namespace[func] && typeof namespace[func][funcname] == 'function') {
-          namespace[func][funcname](args)
-        }
-      },
-      loadEvents : function() {
-        UTIL.fire('mill')
-        UTIL.fire('mill', 'run')
+    #wrap {
+      min-height: 100%;
+      height: auto !important;
+      height: 100%;
+      margin: 0 auto -60px;
+    }
+
+    #footer {
+      height: 60px;
+    }
+    #footer {
+      background-color: #f5f5f5;
+    }
+
+    @media (max-width: 767px) {
+      #footer {
+        margin-left: -20px;
+        margin-right: -20px;
+        padding-left: 20px;
+        padding-right: 20px;
       }
     }
 
-    GAME = {
-      mill : {
-        init : function() {
-          this.player1 = new AI(1)
-          this.player2 = new Human(2)
-          this.currentPlayer = this.player1
-          this.noCatchCountdown = 0 // 50 moves without a catch = tie
-          this.threePiecesCountdown = 0 // 10 moves when both players only have 10 pieces remaining = tie
-          this.boardSize = boardSize = 24
-          this.board = []
-          while(boardSize--) this.board.push(0)
-          this.graph = [
-                          [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10],
-                          [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [12, 3],
-                          [14, 5], [8, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22],
-                          [22, 23], [18, 10], [20, 12], [22, 14]
-                       ]
-          this.graphLength = this.graph.length
-        },
-        run : function() {
-          console.log(this.currentPlayer)
-
-          this.checkPieces()
-
-          this.pickPosition()
-
-          console.log(this.board)
-
-          this.changePlayer()
-
-          setTimeout(function(_this) { _this.run() }, 5000, this)
-        },
-        newGame : function() {
-          console.log('New game')
-          this.init
-          this.run
-        },
-        pickPosition : function() {
-          var position = this.currentPlayer.pickPosition()
-          this.setPieceOnPosition(position)
-        },
-        setPieceOnPosition : function(position) {
-          var currentPlayer = this.currentPlayer
-          console.log(position);
-          var badPosition = !position || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1)
-          if (badPosition) {
-            this.pickPosition()
-          } else {
-            var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value
-            var isMovingPhase = currentPlayer.phase.value === PHASE.MOVING.value
-            var isFlyingPhase = currentPlayer.phase.value === PHASE.FLYING.value
-
-            if(isPlacingPhase) {
-              this.board[position] = currentPlayer.marker
-              currentPlayer.stockPieces--
-
-              var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0
-              if(playerHasNoPiecesInStock) {
-                currentPlayer.phase = PHASE.MOVING
-              }
-            } else if(isMovingPhase) {
-              var playerHasLessThanThreePieces = this.countPiecesOnBoard() <= 3
-              if(playerHasLessThanThreePieces) {
-                currentPlayer.phase = PHASE.FLYING
-              }
-
-              // Implement me (check for a valid movement)
-            } else if(isFlyingPhase) {
-              // Implement me (check for a valid movement)
-            }
-          }
-        },
-        changePlayer : function() {
-          if (this.currentPlayer == this.player1)
-            this.currentPlayer = this.player2
-          else
-            this.currentPlayer = this.player1
-        },
-        countPiecesOnBoard: function() {
-          var piecesOnBoard = _.filter(this.board, function(marker) {
-            return marker == this.currentPlayer.marker
-          }, this).length
-
-          return piecesOnBoard
-        },
-        checkPieces : function() {
-          var piecesOnBoard = this.countPiecesOnBoard()
-          if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
-            this.newGame
-          }
-        }
-      }
+    .container {
+      width: auto;
+      max-width: 680px;
+    }
+    .container .credit {
+      margin: 20px 0;
     }
 
-    /**
-     * Differents phases of the game
-     * @type {Object}
-     */
-    var PHASE = {
-      PLACING: {value: 0, name:'Placing pieces'},
-      MOVING:  {value: 1, name:'Moving pieces'},
-      FLYING:  {value: 2, name:'Flying'}
-    }
-
-    var Player = Class.extend({
-      init: function(type, marker) {
-        this.type = type
-        this.stockPieces = 9
-        this.marker = marker
-        this.phase = PHASE.PLACING
-      }
-    })
-
-    var Human = Player.extend({
-      init: function(marker) {
-        this._super('human', marker)
-      },
-      pickPosition: function() {
-        // ----------------------------- TODO: create a graphical interface -----------------------------
-        return prompt('Pick a position between 0 and ' + (GAME.mill.boardSize - 1))
-        //-----------------------------------------------------------------------------------------------
-
-      }
-    })
-
-    var AI = Player.extend({
-      init: function(marker) {
-        this._super('AI', marker)
-      },
-      pickPosition: function() {
-        var position
-        var isFirstRound = this.stockPieces == 9
-        if (isFirstRound) {
-          position = _.random(GAME.mill.boardSize) // because this is the player's 1st round
-        } else {
-          switch(this.phase) {
-            case PHASE.PLACING:
-              position = this.findPlacingPosition()
-              break
-            case PHASE.MOVING:
-              position = this.findMovingPosition()
-              break
-            case PHASE.FLYING:
-              position = this.findFlyingPosition()
-              break
-            default:
-              position = this.findPlacingPosition()
-          }
-        }
-        return position
-      },
-      findPlacingPosition: function() {
-        var positionCurrentPlayer, position
-        _.each(GAME.mill.board, function(marker, index) {
-          markerCurrentPlayer = marker == this.marker
-          if (markerCurrentPlayer) {
-            // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
-            _.each(GAME.mill.graph, function(element) {
-              if(element[0] == index && GAME.mill.board[element[1]] === 0)
-                position = element[1]
-              else if (element[1] == index && GAME.mill.board[element[0] === 0])
-                position = element[0]
-            })
-
-            // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
-          }
-        }, this)
-
-        if (!position) { // if all pieces are surrounded and no position was found
-          position = _.random(GAME.mill.boardSize)
-        }
-
-        return position
-      },
-      findMovingPosition: function() {
-        console.log('Implement me !');
-        return _.random(GAME.mill.boardSize)
-      },
-      findFlyingPosition: function() {
-        console.log('Implement me !');
-        return _.random(GAME.mill.boardSize)
-      }
-    })
-
-    $(document).ready(UTIL.loadEvents)
-
-    //--------------- GRAPH: DO NOT DELETE THIS SCHEMA ------------
-    //     0------------1------------2
-    //     |            |            |
-    //     |   9-------10------11    |
-    //     |   |        |       |    |
-    //     |   |   17--18--19   |    |
-    //     |   |   |        |   |    |
-    //     7---8---16      20--12----3
-    //     |   |   |        |   |    |
-    //     |   |   23--22--21   |    |
-    //     |   |        |       |    |
-    //     |   15------14------13    |
-    //     |            |            |
-    //     6------------5------------4
-  </script>
+  </style>
 </head>
-<body>
 
+<body>
+  <div id="wrap">
+    <div class="container">
+      <div class="page-header">
+        <h1>{{title}}</h1>
+      </div>
+      <p class="lead">Try to beat the AI.</p>
+      <p>{{GAME.windmill.currentPlayer.username}} is playing.</p>
+    </div>
+  </div>
+
+  <div id="footer">
+    <div class="container">
+      <p class="muted credit">Windmill - Try to beat our AI.</p>
+    </div>
+  </div>
+
+  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
+  <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
+  <script src="javascripts/simpleClass.js"></script>
+  <script src="javascripts/ngWindmillCtrl.js"></script>
 </body>
 </html>
