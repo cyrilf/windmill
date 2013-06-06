@@ -41,6 +41,10 @@ angular.module('ngWindmill',[])
                         [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22], [22, 23], [23, 16]
                      ];
         this.graphLength = this.graph.length;
+        this.lines = [[0, 1, 2], [2, 3, 4], [4, 5, 6], [0, 7, 6], 
+                     [8, 9, 10], [10, 11, 12], [12, 13, 14], [14, 15, 8],
+                     [16, 17, 18], [18, 19, 20], [20, 21, 22], [22, 23, 16],
+                     [1, 9, 17], [3, 11, 19], [5, 13, 21], [7, 15, 23]];
       },
       run : function() {
         console.log(this.currentPlayer);
@@ -68,6 +72,17 @@ angular.module('ngWindmill',[])
         var isBadPosition = position === undefined || this.board[position] !== undefined || position < 0 || position > (this.boardSize - 1);
         return !isBadPosition;
       },
+      isLineComplete : function(position) {
+        var result = false;
+        _.each(GAME.windmill.lines, function(line) {
+          if(_.contains(line, position)) {
+            if(GAME.windmill.board[line[0]] === GAME.windmill.board[line[1]] && GAME.windmill.board[line[1]] === GAME.windmill.board[line[2]]) {
+              result = true;
+            }
+          }
+        });
+        return result;
+	  },
       checkGameState : function(position) {
         var currentPlayer  = this.currentPlayer;
         var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
@@ -78,6 +93,7 @@ angular.module('ngWindmill',[])
           this.board[position] = currentPlayer.marker;
           GAME.ui.pieces.drawPiece(position);
           currentPlayer.stockPieces--;
+          this.isLineComplete(position);
 
           var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
           if(playerHasNoPiecesInStock) {
@@ -303,6 +319,7 @@ angular.module('ngWindmill',[])
           var that    = this;
           piecesCanvas.addEventListener('click', function(event) {
             that.isPieceSelected(event);
+
           });
         },
 
