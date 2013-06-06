@@ -24,13 +24,14 @@ angular.module('ngWindmill',[])
     windmill : {
       init : function() {
         this.player1              = new AI('Daenerys', 1);
-        this.player2              = new Human('Jon Snow', 2);
+        this.player2              = new AI('Jon Snow', 2);
         this.currentPlayer        = this.player1;
         this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
         this.threePiecesCountdown = 0; // 10 moves when both players only have 10 pieces remaining = tie
         var boardSize             = 24;
         this.boardSize            = boardSize;
         this.board                = [];
+        this.speed                = 1000;
         while(boardSize--) this.board.push(0);
         this.graph = [
                         [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
@@ -42,20 +43,20 @@ angular.module('ngWindmill',[])
         this.graphLength = this.graph.length;
       },
       run : function() {
-        console.log(this.currentPlayer);
+        console.log(this.currentPlayer.name);
 
         this.checkPieces();
 
         this.pickPosition();
 
-        console.log(this.board);
+        // console.log(this.board);
 
         this.changePlayer();
 
-        setTimeout(function(_this) { $scope.$apply(_this.run()); }, 5000, this);
+        setTimeout(function(_this) { $scope.$apply(_this.run()); }, this.speed, this);
       },
       newGame : function() {
-        console.log('New game');
+        // console.log('New game');
         this.init();
         this.run();
       },
@@ -64,8 +65,9 @@ angular.module('ngWindmill',[])
         this.setPieceOnPosition(position);
       },
       setPieceOnPosition : function(position) {
+        console.log('chosen pos ' + position)
         var currentPlayer = this.currentPlayer;
-        console.log(position);
+        // console.log(position);
         var badPosition   = !position || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1);
         if (badPosition) {
           this.pickPosition();
@@ -357,17 +359,21 @@ angular.module('ngWindmill',[])
   var Piece = Point.extend({
     init : function(x, y, marker) {
       this._super(x, y);
-      this.marker = marker || 0;
+      this.marker    = marker || 0;
+      this.position  = undefined;
+      this.weight    = 1;           // Number of pieces around + self
+      this.candidate = false;       // At least one empty position around?
     }
   });
 
   var Player = Class.extend({
     init: function(type, username, marker) {
-      this.type        = type;
-      this.stockPieces = 9;
-      this.username    = username;
-      this.marker      = marker;
-      this.phase       = PHASE.PLACING;
+      this.type          = type;
+      this.stockPieces   = 9;
+      this.onBoardPieces = [];
+      this.username      = username;
+      this.marker        = marker;
+      this.phase         = PHASE.PLACING;
     }
   });
 
@@ -408,35 +414,52 @@ angular.module('ngWindmill',[])
       }
       return position;
     },
+    nearbyEmptyPositionFor: function(position) {
+      var nearbyEmptyPosition;
+      _.each(GAME.windmill.graph, function(element) {
+        if (element[0] === position && GAME.windmill.board[element[1]] === 0) {
+          nearbyEmptyPosition = element[1];
+        } else if (element[1] === position && GAME.windmill.board[element[0]] === 0) {
+          nearbyEmptyPosition = element[0];
+        }
+      })
+      console.log('nearby ' + nearbyEmptyPosition);
+      return nearbyEmptyPosition;
+    },
+    setPiecesWeight: function() {
+      _.each(this.onBoardPieces, function(piece) {
+        if (this.nearbyEmptyPositionFor(piece.position)) {
+          piece.weight++;
+        }
+      }, this)
+    },
     findPlacingPosition: function() {
-      var positionCurrentPlayer, position;
-      _.each(GAME.windmill.board, function(marker, index) {
-        var markerCurrentPlayer = marker == this.marker;
-        if (markerCurrentPlayer) {
-          // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
-          _.each(GAME.windmill.graph, function(element) {
-            if(element[0] == index && GAME.windmill.board[element[1]] === 0)
-              position = element[1];
-            else if (element[1] == index && GAME.windmill.board[element[0] === 0])
-              position = element[0];
-          })
-
-          // TODO: position = aggressive position, need to check for a defensive position in case the other player is about to win
+      var potentialPositions = [];
+      var nearbyEmptyPosition;
+      _.each(GAME.windmill.board, function(marker, position) {
+        if (marker === this.marker) {
+          nearbyEmptyPosition = this.nearbyEmptyPositionFor(position);
+          if (nearbyEmptyPosition) {
+            potentialPositions.push(nearbyEmptyPosition);
+          }
         }
       }, this);
 
-      if (!position) { // if all pieces are surrounded and no position was found
-        position = _.random(GAME.windmill.boardSize - 1);
+      // If all pieces are surrounded and no position was found
+      if (_.isEmpty(potentialPositions)) {
+        selectedPosition = _.random(GAME.windmill.boardSize - 1);
+      } else {
+        selectedPosition = _.last(potentialPositions)
       }
 
-      return position;
+      return selectedPosition;
     },
     findMovingPosition: function() {
-      console.log('Implement me !');
+      // console.log('Implement me !');
       return _.random(GAME.windmill.boardSize - 1);
     },
     findFlyingPosition: function() {
-      console.log('Implement me !');
+      // console.log('Implement me !');
       return _.random(GAME.windmill.boardSize - 1);
     }
   });
