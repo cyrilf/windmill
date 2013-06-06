@@ -71,11 +71,12 @@ angular.module('ngWindmill',[])
           this.pickPosition()
         } else {
           var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value
-          var isMovingPhase = currentPlayer.phase.value === PHASE.MOVING.value
-          var isFlyingPhase = currentPlayer.phase.value === PHASE.FLYING.value
+          var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value
+          var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value
 
           if(isPlacingPhase) {
             this.board[position] = currentPlayer.marker
+            GAME.ui.pieces.drawPiece(position);
             currentPlayer.stockPieces--
 
             var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0
@@ -179,7 +180,7 @@ angular.module('ngWindmill',[])
           var increment    = true
           var corner, secondCorner, nextSquare
 
-          var point = new Piece(x,y)
+          var point = new Point(x,y)
           this.points = []
 
           this.drawPoint(point, radius)
@@ -191,7 +192,7 @@ angular.module('ngWindmill',[])
               y += increment ? spacing : -spacing
             }
 
-            point = new Piece(x, y)
+            point = new Point(x, y)
             this.drawPoint(point, radius)
 
             corner = i % 2 === 0
@@ -295,10 +296,19 @@ angular.module('ngWindmill',[])
 
         /**
          * drawPiece
-         * @param  {Object} piece  piece to draw
+         * @param  {Object} piece OR position  piece to draw, or position
+         *                                     where to draw the piece
          */
         drawPiece : function(piece) {
           var ctx = this.ctx
+
+          // If we receive a position in parameter,
+          // we create a piece from these informations
+          var pieceIsAPosition = !(piece instanceof Piece)
+          if(pieceIsAPosition) {
+            var pointPosition = GAME.ui.board.points[piece]
+            piece = new Piece(pointPosition.x, pointPosition.y, GAME.windmill.currentPlayer.marker)
+          }
 
           ctx.beginPath()
           ctx.arc(piece.x, piece.y, 17, 0, 2 * Math.PI, false)
@@ -337,14 +347,20 @@ angular.module('ngWindmill',[])
     FLYING:  {value: 2, name:'Flying'}
   }
 
-  /**
-   * Simple class for piece mangement
-   * @type {[type]}
-   */
-  var Piece = Class.extend({
-    init : function(x, y, marker) {
+  var Point = Class.extend({
+    init : function(x, y) {
       this.x      = x
       this.y      = y
+    }
+  })
+
+  /**
+   * Simple class for piece management
+   * @type {[type]}
+   */
+  var Piece = Point.extend({
+    init : function(x, y, marker) {
+      this._super(x, y)
       this.marker = marker || 0
     }
   })
