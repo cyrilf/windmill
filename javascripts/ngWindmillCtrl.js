@@ -23,8 +23,8 @@ angular.module('ngWindmill',[])
   var GAME = $scope.GAME = {
     windmill : {
       init : function() {
-        this.player1              = new AI('Daenerys', 1);
-        this.player2              = new AI('Jon Snow', 2);
+        this.player1              = new AI('Daenerys', true);
+        this.player2              = new Human('Jon Snow', false);
         this.currentPlayer        = this.player1;
         this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
         this.threePiecesCountdown = 0; // 10 moves when both players only have 10 pieces remaining = tie
@@ -32,7 +32,7 @@ angular.module('ngWindmill',[])
         this.boardSize            = boardSize;
         this.board                = [];
         this.speed                = 1000;
-        while(boardSize--) this.board.push(0);
+        while(boardSize--) this.board.push(undefined);
         this.graph = [
                         [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
                         [1, 9], [3, 11], [5, 13], [7, 15],
@@ -43,65 +43,74 @@ angular.module('ngWindmill',[])
         this.graphLength = this.graph.length;
       },
       run : function() {
-        console.log(this.currentPlayer.name);
+        console.log(this.currentPlayer);
 
         this.checkPieces();
 
-        this.pickPosition();
-
-        // console.log(this.board);
-
-        this.changePlayer();
-
-        setTimeout(function(_this) { $scope.$apply(_this.run()); }, this.speed, this);
-      },
-      newGame : function() {
-        // console.log('New game');
-        this.init();
-        this.run();
-      },
-      pickPosition : function() {
-        var position = this.currentPlayer.pickPosition();
-        this.setPieceOnPosition(position);
+        var isAI = this.currentPlayer.type === 'AI'
+        // If it's an AI he has to pick a position
+        // If it's a human, we wait for him to click
+        if(isAI) {
+          var position = this.currentPlayer.pickPosition();
+        }
       },
       setPieceOnPosition : function(position) {
-        console.log('chosen pos ' + position)
-        var currentPlayer = this.currentPlayer;
-        // console.log(position);
-        var badPosition   = !position || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1);
-        if (badPosition) {
-          this.pickPosition();
+        if (this.isValidPosition(position)) {
+          this.checkGameState(position);
         } else {
-          var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
-          var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value;
-          var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value;
-
-          if(isPlacingPhase) {
-            this.board[position] = currentPlayer.marker;
-            GAME.ui.pieces.drawPiece(position);
-            currentPlayer.stockPieces--;
-
-            var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
-            if(playerHasNoPiecesInStock) {
-              currentPlayer.phase = PHASE.MOVING;
-            }
-          } else if(isMovingPhase) {
-            var playerHasLessThanThreePieces = this.countPiecesOnBoard() <= 3;
-            if(playerHasLessThanThreePieces) {
-              currentPlayer.phase = PHASE.FLYING;
-            }
-
-            // Implement me (check for a valid movement)
-          } else if(isFlyingPhase) {
-            // Implement me (check for a valid movement)
+          var isAI = this.currentPlayer.type === 'AI';
+          if(isAI) { // If it's not a valid position, generate another one
+            this.currentPlayer.pickPosition();
           }
         }
+      },
+      isValidPosition : function(position) {
+        var isBadPosition = position === undefined || this.board[position] !== undefined || position < 0 || position > (this.boardSize - 1);
+        return !isBadPosition;
+      },
+      checkGameState : function(position) {
+        var currentPlayer  = this.currentPlayer;
+        var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
+        var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value;
+        var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value;
+
+        if(isPlacingPhase) {
+          this.board[position] = currentPlayer.marker;
+          GAME.ui.pieces.drawPiece(position);
+          currentPlayer.stockPieces--;
+
+          var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
+          if(playerHasNoPiecesInStock) {
+            currentPlayer.phase = PHASE.MOVING;
+          }
+        } else if(isMovingPhase) {
+          var playerHasLessThanThreePieces = this.countPiecesOnBoard() <= 3;
+          if(playerHasLessThanThreePieces) {
+            currentPlayer.phase = PHASE.FLYING;
+          }
+
+          // Implement me (check for a valid movement)
+        } else if(isFlyingPhase) {
+          // Implement me (check for a valid movement)
+        }
+
+        this.endTurn();
+      },
+      endTurn : function() {
+        this.changePlayer();
+        //this.run();
+        setTimeout(function(_this) { $scope.$apply(_this.run()); }, 100, this);
       },
       changePlayer : function() {
         if (this.currentPlayer == this.player1)
           this.currentPlayer = this.player2;
         else
           this.currentPlayer = this.player1;
+      },
+      newGame : function() {
+        console.log('New game');
+        this.init();
+        this.run();
       },
       countPiecesOnBoard: function() {
         var piecesOnBoard = _.filter(this.board, function(marker) {
@@ -288,8 +297,13 @@ angular.module('ngWindmill',[])
          * @param  {documentElement} piecesCanvas canvas element
          */
         init : function(size, piecesCanvas) {
-          this.size = size;
-          this.ctx  = piecesCanvas.getContext('2d');
+          this.size   = size;
+          this.ctx    = piecesCanvas.getContext('2d');
+          this.radius = 17;
+          var that    = this;
+          piecesCanvas.addEventListener('click', function(event) {
+            that.isPieceSelected(event);
+          });
         },
 
         /**
@@ -309,10 +323,40 @@ angular.module('ngWindmill',[])
           }
 
           ctx.beginPath();
-          ctx.arc(piece.x, piece.y, 17, 0, 2 * Math.PI, false);
-          ctx.fillStyle = (piece.marker === 1) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
+          ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
+          ctx.fillStyle = (piece.marker === true) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
           ctx.fill();
           ctx.closePath();
+        },
+
+        /**
+         * isPieceSelected check if a point is selected and return it
+         * else return null
+         * @param  {Object}  position the click position
+         */
+        isPieceSelected : function(position) {
+          var xRange, yRange;
+          var radius = this.radius;
+          var pointFound, indexFound;
+
+          var isHuman = GAME.windmill.currentPlayer.type === 'human';
+          if(isHuman) {
+            _.each(GAME.ui.board.points, function(point, index) {
+              if(!pointFound) {
+                xRange = (position.offsetX >= (point.x - radius)) && (position.offsetX <= (point.x + radius));
+                yRange = (position.offsetY >= (point.y - radius)) && (position.offsetY <= (point.y + radius));
+
+                if(xRange && yRange) {
+                  pointFound = point;
+                  indexFound = index;
+                }
+              }
+            });
+
+            if(indexFound !== undefined) {
+              GAME.windmill.setPieceOnPosition(indexFound);
+            }
+          }
         },
 
         /**
@@ -359,7 +403,7 @@ angular.module('ngWindmill',[])
   var Piece = Point.extend({
     init : function(x, y, marker) {
       this._super(x, y);
-      this.marker    = marker || 0;
+      this.marker    = marker || undefined;
       this.position  = undefined;
       this.weight    = 1;           // Number of pieces around + self
       this.candidate = false;       // At least one empty position around?
@@ -380,11 +424,6 @@ angular.module('ngWindmill',[])
   var Human = Player.extend({
     init: function(username, marker) {
       this._super('human', username, marker);
-    },
-    pickPosition: function() {
-      // ----------------------------- TODO: create a graphical interface -----------------------------
-      return prompt('Pick a position between 0 and ' + (GAME.windmill.boardSize - 1));
-      //-----------------------------------------------------------------------------------------------
     }
   });
 
@@ -412,18 +451,17 @@ angular.module('ngWindmill',[])
             position = this.findPlacingPosition();
         }
       }
-      return position;
+      GAME.windmill.setPieceOnPosition(position);
     },
     nearbyEmptyPositionFor: function(position) {
       var nearbyEmptyPosition;
       _.each(GAME.windmill.graph, function(element) {
-        if (element[0] === position && GAME.windmill.board[element[1]] === 0) {
+        if (element[0] === position && GAME.windmill.board[element[1]] === undefined) {
           nearbyEmptyPosition = element[1];
-        } else if (element[1] === position && GAME.windmill.board[element[0]] === 0) {
+        } else if (element[1] === position && GAME.windmill.board[element[0]] === undefined) {
           nearbyEmptyPosition = element[0];
         }
       })
-      console.log('nearby ' + nearbyEmptyPosition);
       return nearbyEmptyPosition;
     },
     setPiecesWeight: function() {
