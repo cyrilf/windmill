@@ -23,15 +23,15 @@ angular.module('ngWindmill',[])
   var GAME = $scope.GAME = {
     windmill : {
       init : function() {
-        this.player1              = new AI('Daenerys', 1);
-        this.player2              = new Human('Jon Snow', 2);
+        this.player1              = new AI('Daenerys', true);
+        this.player2              = new Human('Jon Snow', false);
         this.currentPlayer        = this.player1;
         this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
         this.threePiecesCountdown = 0; // 10 moves when both players only have 10 pieces remaining = tie
         var boardSize             = 24;
         this.boardSize            = boardSize;
         this.board                = [];
-        while(boardSize--) this.board.push(0);
+        while(boardSize--) this.board.push(undefined);
         this.graph = [
                         [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
                         [1, 9], [3, 11], [5, 13], [7, 15],
@@ -49,7 +49,6 @@ angular.module('ngWindmill',[])
         // If it's a human, we wait for him to click
         if(isAI) {
           var position = this.currentPlayer.pickPosition();
-          this.setPieceOnPosition(position)
         }
       },
       setPieceOnPosition : function(position) {
@@ -59,13 +58,12 @@ angular.module('ngWindmill',[])
           var isAI = this.currentPlayer.type === 'AI';
           if(isAI) { // If it's not a valid position, generate another one
             this.currentPlayer.pickPosition();
-            this.setPieceOnPosition(position);
           }
         }
       },
       isValidPosition : function(position) {
-        var isBadPosition = position === undefined || this.board[position] !== 0 || position < 0 || position > (this.boardSize - 1);
-        return !isBadPosition
+        var isBadPosition = position === undefined || this.board[position] !== undefined || position < 0 || position > (this.boardSize - 1);
+        return !isBadPosition;
       },
       checkGameState : function(position) {
         var currentPlayer  = this.currentPlayer;
@@ -323,7 +321,7 @@ angular.module('ngWindmill',[])
 
           ctx.beginPath();
           ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
-          ctx.fillStyle = (piece.marker === 1) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
+          ctx.fillStyle = (piece.marker === true) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
           ctx.fill();
           ctx.closePath();
         },
@@ -336,8 +334,7 @@ angular.module('ngWindmill',[])
         isPieceSelected : function(position) {
           var xRange, yRange;
           var radius = this.radius;
-          var pointFound = null;
-          var indexFound = null;
+          var pointFound, indexFound;
 
           var isHuman = GAME.windmill.currentPlayer.type === 'human';
           if(isHuman) {
@@ -353,7 +350,9 @@ angular.module('ngWindmill',[])
               }
             });
 
-            GAME.windmill.setPieceOnPosition(indexFound);
+            if(indexFound !== undefined) {
+              GAME.windmill.setPieceOnPosition(indexFound);
+            }
           }
         },
 
@@ -401,7 +400,7 @@ angular.module('ngWindmill',[])
   var Piece = Point.extend({
     init : function(x, y, marker) {
       this._super(x, y);
-      this.marker = marker || 0;
+      this.marker = marker || undefined;
     }
   });
 
@@ -445,7 +444,7 @@ angular.module('ngWindmill',[])
             position = this.findPlacingPosition();
         }
       }
-      return position;
+      GAME.windmill.setPieceOnPosition(position);
     },
     findPlacingPosition: function() {
       var positionCurrentPlayer, position;
@@ -454,9 +453,9 @@ angular.module('ngWindmill',[])
         if (markerCurrentPlayer) {
           // we use the graph to check if there is an empty position directly linked to the piece, if yes we set the next piece on that position
           _.each(GAME.windmill.graph, function(element) {
-            if(element[0] == index && GAME.windmill.board[element[1]] === 0)
+            if(element[0] == index && GAME.windmill.board[element[1]] === undefined)
               position = element[1];
-            else if (element[1] == index && GAME.windmill.board[element[0] === 0])
+            else if (element[1] == index && GAME.windmill.board[element[0] === undefined])
               position = element[0];
           })
 
