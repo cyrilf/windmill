@@ -45,6 +45,10 @@
       margin: 20px 0;
     }
 
+    canvas {
+      position: absolute;
+    }
+
   </style>
 </head>
 
@@ -56,6 +60,9 @@
       </div>
       <p class="lead">Try to beat the AI.</p>
       <p>{{GAME.windmill.currentPlayer.username}} is playing.</p>
+      <p>{{GAME.windmill.currentPlayer.stockPieces}} pieces in his hand.</p>
+      <canvas id="board"></canvas>
+      <canvas id="pieces"></canvas>
     </div>
   </div>
 
@@ -65,7 +72,6 @@
     </div>
   </div>
 
-  <script src="https://ajax.googleapis.com/ajax/libs/jquery/2.0.2/jquery.min.js"></script>
   <script src="https://ajax.googleapis.com/ajax/libs/angularjs/1.0.6/angular.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/underscore.js/1.4.4/underscore-min.js"></script>
   <script src="javascripts/simpleClass.js"></script>
