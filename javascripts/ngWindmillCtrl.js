@@ -33,10 +33,11 @@ angular.module('ngWindmill',[])
         this.board = []
         while(boardSize--) this.board.push(0)
         this.graph = [
-                        [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 8], [8, 9], [9, 10],
-                        [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8], [10, 1], [12, 3],
-                        [14, 5], [8, 16], [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22],
-                        [22, 23], [18, 10], [20, 12], [22, 14]
+                        [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
+                        [1, 9], [3, 11], [5, 13], [7, 15],
+                        [8, 9], [9, 10], [10, 11], [11, 12], [12, 13], [13, 14], [14, 15], [15, 8],
+                        [9, 17], [11, 19], [13, 21], [15, 23],
+                        [16, 17], [17, 18], [18, 19], [19, 20], [20, 21], [21, 22], [22, 23], [23, 16]
                      ]
         this.graphLength = this.graph.length
       },
@@ -51,7 +52,7 @@ angular.module('ngWindmill',[])
 
         this.changePlayer()
 
-        setTimeout(function(_this) { $scope.$apply(_this.run()) }, 555000, this)
+        setTimeout(function(_this) { $scope.$apply(_this.run()) }, 5000, this)
       },
       newGame : function() {
         console.log('New game')
@@ -408,7 +409,7 @@ angular.module('ngWindmill',[])
               position = element[0]
           })
 
-          // TODO: position = agressive position, need to check for a defensive position in case the other player is about to win
+          // TODO: position = aggressive position, need to check for a defensive position in case the other player is about to win
         }
       }, this)
 
@@ -434,14 +435,14 @@ angular.module('ngWindmill',[])
 //--------------- GRAPH: DO NOT DELETE THIS SCHEMA ------------
 //     0------------1------------2
 //     |            |            |
-//     |   9-------10------11    |
+//     |   8--------9------10    |
 //     |   |        |       |    |
-//     |   |   17--18--19   |    |
+//     |   |   16--17--18   |    |
 //     |   |   |        |   |    |
-//     7---8---16      20--12----3
+//     7---15--23      19--11----3
 //     |   |   |        |   |    |
-//     |   |   23--22--21   |    |
+//     |   |   22--21--20   |    |
 //     |   |        |       |    |
-//     |   15------14------13    |
+//     |   14------13------12    |
 //     |            |            |
 //     6------------5------------4
