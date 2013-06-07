@@ -319,7 +319,10 @@ angular.module('ngWindmill',[])
           var pieceIsAPosition = !(piece instanceof Piece);
           if(pieceIsAPosition) {
             var pointPosition = GAME.ui.board.points[piece];
-            piece = new Piece(pointPosition.x, pointPosition.y, GAME.windmill.currentPlayer.marker);
+            var position = piece;
+
+            piece = new Piece(pointPosition.x, pointPosition.y, GAME.windmill.currentPlayer.marker, position);
+            GAME.windmill.currentPlayer.onBoardPieces.push(piece);
           }
 
           ctx.beginPath();
@@ -401,12 +404,12 @@ angular.module('ngWindmill',[])
    * @type {[type]}
    */
   var Piece = Point.extend({
-    init : function(x, y, marker) {
+    init : function(x, y, marker, position) {
       this._super(x, y);
-      this.marker    = marker || undefined;
-      this.position  = undefined;
-      this.weight    = 1;           // Number of pieces around + self
-      this.candidate = false;       // At least one empty position around?
+      this.marker           = marker || undefined;
+      this.position         = position;
+      this.weight           = 1;           // Number of pieces around + self
+      this.nearbyCandidates = [];          // Empty positions around
     }
   });
 
@@ -453,42 +456,73 @@ angular.module('ngWindmill',[])
       }
       GAME.windmill.setPieceOnPosition(position);
     },
-    nearbyEmptyPositionFor: function(position) {
-      var nearbyEmptyPosition;
+    nearbyPiecesNumber: function(position) {
+      var nearbyPieces = [];
       _.each(GAME.windmill.graph, function(element) {
-        if (element[0] === position && GAME.windmill.board[element[1]] === undefined) {
-          nearbyEmptyPosition = element[1];
-        } else if (element[1] === position && GAME.windmill.board[element[0]] === undefined) {
-          nearbyEmptyPosition = element[0];
+        if (element[0] === position && GAME.windmill.board[element[1]] === this.marker) {
+          if (!_.contains(nearbyPieces, element[1])) {
+            nearbyPieces.push(element[1]);
+          }
+        } else if (element[1] === position && GAME.windmill.board[element[0]] === this.marker) {
+          if (!_.contains(nearbyPieces, element[0])) {
+            nearbyPieces.push(element[0]);
+          }
         }
       })
-      return nearbyEmptyPosition;
+      return nearbyPieces.length;
+    },
+    setNearbyCandidatesFor: function(piece) {
+      piece.nearbyCandidates = [];
+      _.each(GAME.windmill.graph, function(element) {
+        if (element[0] === piece.position && GAME.windmill.board[element[1]] === undefined) {
+          if (!_.contains(piece.nearbyCandidates, element[1])) {
+            piece.nearbyCandidates.push(element[1]);
+          }
+        } else if (element[1] === piece.position && GAME.windmill.board[element[0]] === undefined) {
+          if (!_.contains(piece.nearbyCandidates, element[0])) {
+            piece.nearbyCandidates.push(element[0]);
+          }
+        }
+      })
+      console.log(piece);
     },
     setPiecesWeight: function() {
       _.each(this.onBoardPieces, function(piece) {
-        if (this.nearbyEmptyPositionFor(piece.position)) {
-          piece.weight++;
-        }
+        piece.weight = 1;
+      })
+      _.each(this.onBoardPieces, function(piece) {
+        piece.weight += this.nearbyPiecesNumber(piece.position);
       }, this)
     },
     findPlacingPosition: function() {
-      var potentialPositions = [];
-      var nearbyEmptyPosition;
-      _.each(GAME.windmill.board, function(marker, position) {
-        if (marker === this.marker) {
-          nearbyEmptyPosition = this.nearbyEmptyPositionFor(position);
-          if (nearbyEmptyPosition) {
-            potentialPositions.push(nearbyEmptyPosition);
-          }
-        }
+      // var potentialPositions = [];
+      // var nearbyEmptyPosition;
+      var selectedPosition;
+      _.each(this.onBoardPieces, function(piece) {
+        // nearbyEmptyPosition = this.nearbyEmptyPositionFor(piece.position);
+        // if (nearbyEmptyPosition) {
+        //   potentialPositions.push(nearbyEmptyPosition);
+        // }
+        this.setNearbyCandidatesFor(piece);
       }, this);
 
+      this.setPiecesWeight();
+      piecesList = _.sortBy(this.onBoardPieces, function(piece) { return -piece.weight; })
+
+      _.each(piecesList, function(piece) {
+        if (!_.isEmpty(piece.nearbyCandidates)) {
+          selectedPosition = _.first(piece.nearbyCandidates);
+        }
+      })
+
       // If all pieces are surrounded and no position was found
-      if (_.isEmpty(potentialPositions)) {
+      if (!selectedPosition) {
         selectedPosition = _.random(GAME.windmill.boardSize - 1);
-      } else {
-        selectedPosition = _.last(potentialPositions)
       }
+      // } else {
+      //   // GAME.windmill.currentPlayer.setPiecesWeight();
+      //   selectedPosition = _.last(potentialPositions);
+      // }
 
       return selectedPosition;
     },
