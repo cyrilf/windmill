@@ -484,7 +484,7 @@ angular.module('ngWindmill',[])
             }
           }
         }, this)
-        if (ok && weight > 0) {
+        if (ok && weight > 0 && weight < 3) {
           weightedLines.push([index, weight]);
         }
       }, this)
