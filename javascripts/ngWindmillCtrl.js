@@ -504,28 +504,68 @@ angular.module('ngWindmill',[])
       return selectedPosition;
     },
     getEmptyLine: function() {
+      var emptyLine;
+
       _.each(GAME.windmill.lines, function(line) {
-          if(_.uniq(line).length === 1 && line[0] === undefined) {
-            console.log(line);
-            return line;
+          if (GAME.windmill.board[line[0]] === undefined && GAME.windmill.board[line[1]] === undefined && GAME.windmill.board[line[2]] === undefined) {
+            emptyLine = line;
           }
       });
+
+      return emptyLine;
+    },
+    checkEnemyLines: function() {
+      var sum;
+      var selectedLine;
+
+      _.each(GAME.windmill.lines, function(line, index) {
+        if (selectedLine === undefined) {
+          sum = 0;
+          _.each(line, function(element) {
+            if (GAME.windmill.board[element] === !this.marker) {
+              sum++;
+            }
+          }, this)
+          if (sum === 2 && this.pickEmptyPositionFromLine(index)) {
+            selectedLine = index;
+          }
+        }
+      }, this)
+
+      return selectedLine;
     },
     findPlacingPosition: function() {
       var selectedPosition;
+      var dangerPosition;
       var weightedLines = this.setLinesWeight();
+
+      var dangerLine = this.checkEnemyLines();
+
+      if (dangerLine !== undefined) {
+        dangerPosition = this.pickEmptyPositionFromLine(dangerLine);
+      }
 
       if (!_.isEmpty(weightedLines)) {
         weightedLines = _.sortBy(weightedLines, function(line) { return -line[1]; });
-        selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+        if (_.first(weightedLines)[1] === 2) {
+          selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+        } else if (dangerPosition !== undefined) {
+          selectedPosition = dangerPosition;
+        } else {
+          selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+        }
       }
 
-      if (!selectedPosition) {
-        var emptyLine = this.getEmptyLine();
-        if (emptyLine) {
-          selectedPosition = _.shuffle(emptyLine)[0];
+      if (selectedPosition === undefined) {
+        if (dangerPosition !== undefined) {
+          selectedPosition = dangerPosition;
         } else {
-          selectedPosition = _.random(GAME.windmill.boardSize - 1);
+          var emptyLine = this.getEmptyLine();
+          if (emptyLine !== undefined) {
+            selectedPosition = _.shuffle(emptyLine)[0];
+          } else {
+            selectedPosition = _.random(GAME.windmill.boardSize - 1);
+          }
         }
       }
 
