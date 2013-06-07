@@ -47,7 +47,7 @@ angular.module('ngWindmill',[])
                      [1, 9, 17], [3, 11, 19], [5, 13, 21], [7, 15, 23]];
       },
       run : function() {
-        console.log(this.currentPlayer);
+        //console.log(this.currentPlayer);
 
         this.checkPieces();
 
@@ -503,6 +503,14 @@ angular.module('ngWindmill',[])
 
       return selectedPosition;
     },
+    getEmptyLine: function() {
+      _.each(GAME.windmill.lines, function(line) {
+          if(_.uniq(line).length === 1 && line[0] === undefined) {
+            console.log(line);
+            return line;
+          }
+      });
+    },
     findPlacingPosition: function() {
       var selectedPosition;
       var weightedLines = this.setLinesWeight();
@@ -513,7 +521,12 @@ angular.module('ngWindmill',[])
       }
 
       if (!selectedPosition) {
-        selectedPosition = _.random(GAME.windmill.boardSize - 1);
+        var emptyLine = this.getEmptyLine();
+        if (emptyLine) {
+          selectedPosition = _.shuffle(emptyLine)[0];
+        } else {
+          selectedPosition = _.random(GAME.windmill.boardSize - 1);
+        }
       }
 
       return selectedPosition;
