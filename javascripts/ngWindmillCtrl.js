@@ -474,6 +474,10 @@ angular.module('ngWindmill',[])
       }
       GAME.windmill.setPieceOnPosition(position);
     },
+    // The weight is the number of pieces (for the current player) on the line.
+    // The more a line is heavy, the more it's a good strategy to try to complete it.
+    // Note : completed lines and lines where the enemy has at least one piece are not returned
+    // Returns [[lineIndex, weight], [lineIndex, weight], ...]
     setLinesWeight: function() {
       var weightedLines = [];
       var weight;
@@ -522,7 +526,7 @@ angular.module('ngWindmill',[])
 
       return emptyLine;
     },
-    checkEnemyLines: function() {
+    dangerousEnemyLine: function() {
       var sum;
       var selectedLine;
 
@@ -542,7 +546,8 @@ angular.module('ngWindmill',[])
 
       return selectedLine;
     },
-    selectVulnerablePieceFromLine : function(lineIndex) {
+    // A piece is considered vulnerable if it can be destroyed.
+    selectEnemyVulnerablePieceFromLine : function(lineIndex) {
       var selectedPiece;
 
       if (lineIndex !== undefined) {
@@ -556,7 +561,7 @@ angular.module('ngWindmill',[])
       }
       return selectedPiece;
     },
-    selectVulnerablePieceFromBoard : function() {
+    selectEnemyVulnerablePieceFromBoard : function() {
       var selectedPiece;
 
       _.each(GAME.windmill.board, function(marker, index) {
@@ -567,15 +572,15 @@ angular.module('ngWindmill',[])
       return selectedPiece;
     },
     selectEnemyPiece : function() {
-      var lineIndex = this.checkEnemyLines();
-      return this.selectVulnerablePieceFromLine(lineIndex) || this.selectVulnerablePieceFromBoard();
+      var lineIndex = this.dangerousEnemyLine();
+      return this.selectEnemyVulnerablePieceFromLine(lineIndex) || this.selectEnemyVulnerablePieceFromBoard();
     },
     findPlacingPosition: function() {
       var selectedPosition;
       var dangerPosition;
       var weightedLines = this.setLinesWeight();
 
-      var dangerLine = this.checkEnemyLines();
+      var dangerLine = this.dangerousEnemyLine();
 
       if (dangerLine !== undefined) {
         dangerPosition = this.pickEmptyPositionFromLine(dangerLine);
