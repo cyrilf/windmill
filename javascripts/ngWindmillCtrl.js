@@ -47,8 +47,6 @@ angular.module('ngWindmill',[])
                      [1, 9, 17], [3, 11, 19], [5, 13, 21], [7, 15, 23]];
       },
       run : function() {
-        //console.log(this.currentPlayer);
-
         this.checkPieces();
 
         var isAI = this.currentPlayer.type === 'AI'
@@ -82,7 +80,7 @@ angular.module('ngWindmill',[])
           }
         });
         return result;
-	  },
+      },
       checkGameState : function(position) {
         var currentPlayer  = this.currentPlayer;
         var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
@@ -93,14 +91,23 @@ angular.module('ngWindmill',[])
           this.board[position] = currentPlayer.marker;
           GAME.ui.pieces.drawPiece(position);
           currentPlayer.stockPieces--;
-          this.isLineComplete(position);
+
+          if (this.isLineComplete(position)) {
+            if (this.currentPlayer.type === 'AI') {
+              var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
+              if (pieceToBeDestroyed !== undefined) {
+                GAME.windmill.board[pieceToBeDestroyed] = undefined;
+                GAME.ui.pieces.clearPiece(GAME.ui.board.points[pieceToBeDestroyed]);
+              }
+            }
+          }
 
           var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
           if(playerHasNoPiecesInStock) {
             currentPlayer.phase = PHASE.MOVING;
           }
         } else if(isMovingPhase) {
-          var playerHasLessThanThreePieces = this.countPiecesOnBoard() <= 3;
+          var playerHasLessThanThreePieces = this.countPiecesOnBoard() === 3;
           if(playerHasLessThanThreePieces) {
             currentPlayer.phase = PHASE.FLYING;
           }
@@ -124,7 +131,6 @@ angular.module('ngWindmill',[])
           this.currentPlayer = this.player1;
       },
       newGame : function() {
-        console.log('New game');
         this.init();
         this.run();
       },
@@ -534,6 +540,34 @@ angular.module('ngWindmill',[])
 
       return selectedLine;
     },
+    selectVulnerablePieceFromLine : function(lineIndex) {
+      var selectedPiece;
+
+      if (lineIndex !== undefined) {
+        var line = GAME.windmill.lines[lineIndex];
+
+        _.each(line, function(element) {
+          if (GAME.windmill.board[element] === !this.marker && !GAME.windmill.isLineComplete(element)) {
+            selectedPiece = element;
+          }
+        }, this)
+      }
+      return selectedPiece;
+    },
+    selectVulnerablePieceFromBoard : function() {
+      var selectedPiece;
+
+      _.each(GAME.windmill.board, function(marker, index) {
+        if (marker === !this.marker && !GAME.windmill.isLineComplete(index)) {
+          selectedPiece = index;
+        }
+      }, this)
+      return selectedPiece;
+    },
+    selectEnemyPiece : function() {
+      var lineIndex = this.checkEnemyLines();
+      return this.selectVulnerablePieceFromLine(lineIndex) || this.selectVulnerablePieceFromBoard();
+    },
     findPlacingPosition: function() {
       var selectedPosition;
       var dangerPosition;
@@ -572,11 +606,9 @@ angular.module('ngWindmill',[])
       return selectedPosition;
     },
     findMovingPosition: function() {
-      // console.log('Implement me !');
       return _.random(GAME.windmill.boardSize - 1);
     },
     findFlyingPosition: function() {
-      // console.log('Implement me !');
       return _.random(GAME.windmill.boardSize - 1);
     }
   });
