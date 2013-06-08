@@ -23,7 +23,7 @@ angular.module('ngWindmill',[])
   var GAME = $scope.GAME = {
     windmill : {
       init : function() {
-        this.player1              = new AI('Daenerys', true);
+        this.player1              = new Human('Daenerys', true);
         this.player2              = new Human('Jon Snow', false);
         this.currentPlayer        = this.player1;
         this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
@@ -121,14 +121,12 @@ angular.module('ngWindmill',[])
       },
       endTurn : function() {
         this.changePlayer();
+        this.isSurrounded();
         //this.run();
         setTimeout(function(_this) { $scope.$apply(_this.run()); }, 100, this);
       },
       changePlayer : function() {
-        if (this.currentPlayer == this.player1)
-          this.currentPlayer = this.player2;
-        else
-          this.currentPlayer = this.player1;
+        this.currentPlayer = this.getOpponent();
       },
       newGame : function() {
         alert(this.currentPlayer.username);
@@ -148,9 +146,36 @@ angular.module('ngWindmill',[])
         if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
           this.newGame();
         }
+      },    
+      isSurrounded: function() {
+        var opponent = !this.currentPlayer.marker;
+        var playerMovement = 0;
+        var fail = false;
+
+        _.each(GAME.windmill.board, function(player, index) {
+          if(opponent === player)
+          {
+            _.each(GAME.windmill.graph, function(connection) {
+              if(_.contains(connection, index) && GAME.windmill.board[_.without(connection, index)[0]] === undefined) {
+                playerMovement++;
+              }
+            });
+          }
+        });
+
+        console.log(playerMovement);
+
+        var opponentNoMorePiecesinStock = this.getOpponent(this.currentPlayer).stockPieces === 0;
+        if(playerMovement === 0 && opponentNoMorePiecesinStock)
+          this.newGame();
+      },
+      getOpponent: function() {
+        if(this.currentPlayer === this.player1)
+          return this.player2;
+        else
+          return this.player1;
       }
     },
-
     ui : {
       init : function() {
         this.size           = 600;
