@@ -131,7 +131,9 @@ angular.module('ngWindmill',[])
           this.currentPlayer = this.player1;
       },
       newGame : function() {
+        alert(this.currentPlayer.username);
         this.init();
+        GAME.ui.init();
         this.run();
       },
       countPiecesOnBoard: function() {
