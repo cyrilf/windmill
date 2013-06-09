@@ -70,12 +70,12 @@ angular.module('ngWindmill',[])
         var isBadPosition = position === undefined || position < 0 || position > (this.boardSize - 1);
 
         if(this.requireAnotherAction) {
-          if(this.requireAnotherAction === 'chooseOpponent') {
-            var isNotOpponentPiece = this.board[position] !== !this.currentPlayer.marker;
-            var isOpponentPiece = !isNotOpponentPiece;
-            var lineOpponentComplete = isOpponentPiece && GAME.windmill.isLineComplete(position);
+          if(this.requireAnotherAction === 'chooseEnemy') {
+            var isNotEnemyPiece = this.board[position] !== !this.currentPlayer.marker;
+            var isEnemyPiece = !isNotEnemyPiece;
+            var lineEnemyComplete = isEnemyPiece && GAME.windmill.isLineComplete(position);
 
-            if(isNotOpponentPiece || lineOpponentComplete) {
+            if(isNotEnemyPiece || lineEnemyComplete) {
               isBadPosition = true;
             }
           }
@@ -97,15 +97,15 @@ angular.module('ngWindmill',[])
         return result;
       },
       isDestructionOption : function(position) {
-        if (this.isLineComplete(position) && this.canRemoveOpponentPiece()) {
+        if (this.isLineComplete(position) && this.canRemoveEnemyPiece()) {
           if (this.currentPlayer.type === 'AI') {
             var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
             if (pieceToBeDestroyed !== undefined) {
               this.destroyPiece(pieceToBeDestroyed);
             }
           } else {
-            // Do something on the ui to say to the user to choose an opponent piece
-            this.requireAnotherAction = 'chooseOpponent';
+            // Do something on the ui to say to the user to choose an enemy piece
+            this.requireAnotherAction = 'chooseEnemy';
           }
         }
       },
@@ -120,7 +120,7 @@ angular.module('ngWindmill',[])
         this.requireAnotherAction = this.requireAnotherAction || false;
 
         if(this.requireAnotherAction) {
-          if(this.requireAnotherAction === 'chooseOpponent') {
+          if(this.requireAnotherAction === 'chooseEnemy') {
             this.destroyPiece(position);
           }
           this.requireAnotherAction = false;
@@ -156,18 +156,18 @@ angular.module('ngWindmill',[])
         }
       },
       /**
-       * canRemoveOpponentPiece return true if an opponent piece can be remove
-       * It return false if no opponen piece can be remove (e.g. all opponent pieces are
+       * canRemoveEnemyPiece return true if an enemy piece can be remove
+       * It return false if no enemy piece can be remove (e.g. all enemy pieces are
        * in an complete line)
        * @return {[type]} [description]
        */
-      canRemoveOpponentPiece: function() {
+      canRemoveEnemyPiece: function() {
         var result = false;
-        var isOpponentPiece, isLineIncomplete;
+        var isEnemyPiece, isLineIncomplete;
         _.each(this.board, function(marker, index) {
-          isOpponentPiece  = marker === !this.currentPlayer.marker;
+          isEnemyPiece  = marker === !this.currentPlayer.marker;
           isLineIncomplete = !this.isLineComplete(index);
-          if (isOpponentPiece && isLineIncomplete) {
+          if (isEnemyPiece && isLineIncomplete) {
             result = true;
           }
         }, this);
@@ -181,7 +181,7 @@ angular.module('ngWindmill',[])
         setTimeout(function(_this) { $scope.$apply(_this.run()); }, 100, this);
       },
       changePlayer : function() {
-        this.currentPlayer = this.getOpponent();
+        this.currentPlayer = this.getEnemy();
       },
       newGame : function() {
         alert(this.currentPlayer.username);
@@ -207,13 +207,12 @@ angular.module('ngWindmill',[])
         GAME.ui.pieces.clearPiece(GAME.ui.board.points[pieceToBeDestroyed]);
       },
       isSurrounded: function() {
-        var opponent = !this.currentPlayer.marker;
+        var enemy = !this.currentPlayer.marker;
         var playerMovement = 0;
         var fail = false;
 
         _.each(GAME.windmill.board, function(player, index) {
-          if(opponent === player)
-          {
+          if(enemy === player) {
             _.each(GAME.windmill.graph, function(connection) {
               if(_.contains(connection, index) && GAME.windmill.board[_.without(connection, index)[0]] === undefined) {
                 playerMovement++;
@@ -222,13 +221,11 @@ angular.module('ngWindmill',[])
           }
         });
 
-        console.log(playerMovement);
-
-        var opponentNoMorePiecesinStock = this.getOpponent(this.currentPlayer).stockPieces === 0;
-        if(playerMovement === 0 && opponentNoMorePiecesinStock)
+        var enemyNoMorePiecesinStock = this.getEnemy(this.currentPlayer).stockPieces === 0;
+        if(playerMovement === 0 && enemyNoMorePiecesinStock)
           this.newGame();
       },
-      getOpponent: function() {
+      getEnemy: function() {
         if(this.currentPlayer === this.player1)
           return this.player2;
         else
