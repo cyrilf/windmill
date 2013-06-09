@@ -197,6 +197,8 @@ var AI = Player.extend({
   findMovingPieceAndPosition: function() {
     var selectedPiece, selectedPosition, dangerPosition;
 
+    // GAME.board = [false, false, undefined, true, true, false, true, undefined, true, false, false, false, true, undefined, true, true, undefined, undefined, false, undefined, false, undefined, undefined, true]
+
     var weightedLines = this.setLinesWeight();
 
     var dangerLine = this.dangerousEnemyLine();
@@ -206,24 +208,34 @@ var AI = Player.extend({
     }
 
     if (!_.isEmpty(weightedLines)) {
-      weightedLines = _.sortBy(weightedLines, function(line) { return -line[1]; });
-      if (_.first(weightedLines)[1] === 2) {
-        selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
-        selectedPiece = this.findNearbyPieceFor(selectedPosition);
-      }
+      weightedLines = _.filter(weightedLines, function(line) { return line[1] === 2; })
+
+      _.each(weightedLines, function(element) {
+        if (selectedPosition === undefined || selectedPiece === undefined) {
+          selectedPosition = this.pickEmptyPositionFromLine(_.first(element));
+          tempPiece = this.findNearbyPieceFor(selectedPosition);
+          if (!_.contains(GAME.lines[_.first(element)], tempPiece)) {
+            selectedPiece = tempPiece;
+            console.log('Attacking on position ' + selectedPosition + ' with piece ' + selectedPiece);
+          }
+        }
+      }, this);
     }
 
     if ((selectedPosition === undefined || selectedPiece === undefined) && dangerPosition !== undefined) {
       selectedPosition = dangerPosition;
       selectedPiece = this.findNearbyPieceFor(selectedPosition);
+      console.log('Defending on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
       selectedPosition = _.first(emptyPositionAndNearbyPiece);
       selectedPiece = _.last(emptyPositionAndNearbyPiece);
+      console.log('Random on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
+    console.log('Finally on position ' + selectedPosition + ' with piece ' + selectedPiece);
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
