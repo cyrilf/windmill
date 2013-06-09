@@ -221,6 +221,24 @@ var UI = {
       return indexFound;
     },
 
+    selectPiece : function(position) {
+      var ctx = this.ctx;
+      var pointPosition = UI.Board.points[position];
+
+      ctx.beginPath();
+      ctx.arc(pointPosition.x, pointPosition.y, this.radius, 0, 2 * Math.PI, false);
+      ctx.lineWidth = 3;
+      ctx.strokeStyle="rgba(236, 240, 241,1.0)";
+      ctx.stroke();
+      ctx.closePath();
+    },
+
+    unselectPiece : function(position, currentPlayerMarker) {
+      var pointPosition = UI.Board.points[position];
+      this.clearPiece(pointPosition, 19);
+      this.drawPiece(position, currentPlayerMarker);
+    },
+
     /**
      * clear
      */
@@ -232,8 +250,8 @@ var UI = {
      * clear a piece
      * @param  {object} piece  piece to clear
      */
-    clearPiece : function(piece) {
-      var radius = 17;
+    clearPiece : function(piece, radius) {
+      radius = radius || this.radius || 17;
       this.ctx.clearRect(piece.x - radius, piece.y - radius,
                          radius * 2, radius * 2);
     }
