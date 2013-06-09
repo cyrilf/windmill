@@ -197,7 +197,7 @@ var AI = Player.extend({
   findMovingPieceAndPosition: function() {
     var selectedPiece, selectedPosition, dangerPosition;
 
-    // GAME.board = [false, false, undefined, true, true, false, true, undefined, true, false, false, false, true, undefined, true, true, undefined, undefined, false, undefined, false, undefined, undefined, true]
+    // GAME.board = [true, true, undefined, true, true, false, true, undefined, true, false, false, false, true, undefined, true, true, undefined, undefined, false, undefined, false, undefined, undefined, true]
 
     var weightedLines = this.setLinesWeight();
 
@@ -214,10 +214,13 @@ var AI = Player.extend({
         if (selectedPosition === undefined || selectedPiece === undefined) {
           selectedPosition = this.pickEmptyPositionFromLine(_.first(element));
           tempPiece = this.findNearbyPieceFor(selectedPosition);
-          if (!_.contains(GAME.lines[_.first(element)], tempPiece)) {
+
+          GAME.board[selectedPosition] = this.marker;
+          if (GAME.isLineComplete(selectedPosition)) {
             selectedPiece = tempPiece;
             console.log('Attacking on position ' + selectedPosition + ' with piece ' + selectedPiece);
           }
+          GAME.board[selectedPosition] = undefined;
         }
       }, this);
     }
