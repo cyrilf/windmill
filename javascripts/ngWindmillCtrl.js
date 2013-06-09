@@ -15,7 +15,6 @@ angular.module('ngWindmill',[])
     },
     loadEvents : function() {
       UTIL.fire('windmill');
-      UTIL.fire('ui');
       UTIL.fire('windmill', 'run');
     }
   };
@@ -45,6 +44,17 @@ angular.module('ngWindmill',[])
                      [8, 9, 10], [10, 11, 12], [12, 13, 14], [14, 15, 8],
                      [16, 17, 18], [18, 19, 20], [20, 21, 22], [22, 23, 16],
                      [1, 9, 17], [3, 11, 19], [5, 13, 21], [7, 15, 23]];
+
+        UI.init(this.boardSize);
+
+        // When user click on canvas to play
+        var that = this;
+        UI.Pieces.piecesCanvas.addEventListener('click', function(event) {
+          var isHuman = that.currentPlayer.type === 'human';
+          if(isHuman) {
+            that.currentPlayer.pickPosition(event);
+          }
+        });
       },
       run : function() {
         var isAI = this.currentPlayer.type === 'AI'
@@ -79,13 +89,13 @@ angular.module('ngWindmill',[])
         } else {
           if(this.getCurrentPhase() === PHASE.PLACING) {
             this.board[position] = currentPlayer.marker;
-            GAME.ui.pieces.drawPiece(position, currentPlayer.marker);
+            UI.Pieces.drawPiece(position, currentPlayer.marker);
             currentPlayer.stockPieces--;
 
             this.isDestructionOption(position);
           } else if(this.getCurrentPhase() === PHASE.MOVING ) {
             this.board[position] = currentPlayer.marker;
-            GAME.ui.pieces.drawPiece(position, currentPlayer.marker);
+            UI.Pieces.drawPiece(position, currentPlayer.marker);
 
             this.isDestructionOption(position);
           } else if(this.getCurrentPhase() === PHASE.FLYING) {
@@ -236,7 +246,7 @@ angular.module('ngWindmill',[])
       },
       destroyPiece : function(pieceToBeDestroyed) {
         this.board[pieceToBeDestroyed] = undefined;
-        GAME.ui.pieces.clearPiece(GAME.ui.board.points[pieceToBeDestroyed]);
+        UI.Pieces.clearPiece(UI.Board.points[pieceToBeDestroyed]);
       },
       /**
        * canRemoveEnemyPiece return true if an enemy piece can be remove
@@ -269,253 +279,8 @@ angular.module('ngWindmill',[])
       newGame : function() {
         alert(this.currentPlayer.username);
         this.init();
-        GAME.ui.init();
+        UI.init(GAME.windmill.boardSize);
         this.run();
-      }
-    },
-    ui : {
-      init : function() {
-        this.size           = 600;
-        var boardCanvas     = document.getElementById('board');
-        var piecesCanvas    = document.getElementById('pieces');
-        boardCanvas.width   = this.size;
-        boardCanvas.height  = this.size;
-        piecesCanvas.width  = this.size;
-        piecesCanvas.height = this.size;
-
-        this.board.init(this.size, boardCanvas);
-        this.pieces.init(this.size, piecesCanvas);
-      },
-
-      /**
-       * Board functions
-       */
-
-      board : {
-
-        /**
-         * init
-         * @param  {int}             size        canvas size
-         * @param  {documentElement} boardCanvas canvas element
-         */
-        init : function(size, boardCanvas) {
-          this.size = size;
-          this.ctx  = boardCanvas.getContext('2d');
-          this.draw();
-        },
-
-        /**
-         * draw
-         */
-        draw : function() {
-          this.drawBackground();
-          this.drawPoints();
-          this.drawLines();
-        },
-
-        /**
-         * drawBackground
-         */
-        drawBackground : function() {
-          var ctx       = this.ctx;
-          ctx.fillStyle = 'rgba(22, 160, 133, 1.0)';
-          ctx.fillRect(0, 0, this.size, this.size);
-        },
-
-        /**
-         * drawPoints
-         */
-        drawPoints : function() {
-          var offset       = this.size / 6;
-          var spacing      = offset * 2;
-          var x            = offset, y = offset;
-          var radius       = 7; // point radius
-          var pointsNbr    = GAME.windmill.boardSize; // nbr point to draw
-          var squaresNbr   = 3;
-          var squareLength = pointsNbr / squaresNbr;
-          var isHorizontal = true;
-          var increment    = true;
-          var corner, secondCorner, nextSquare;
-
-          var point   = new Point(x,y);
-          this.points = [];
-
-          this.drawPoint(point, radius);
-          for(var i = 1; i < pointsNbr; i++ ) {
-
-            if(isHorizontal) {
-              x += increment ? spacing : -spacing;
-            } else {
-              y += increment ? spacing : -spacing;
-            }
-
-            point = new Point(x, y);
-            this.drawPoint(point, radius);
-
-            corner = i % 2 === 0;
-            if(corner) {
-              isHorizontal = !isHorizontal;
-            }
-
-            secondCorner = i % 4 === 0;
-            if(secondCorner) {
-              increment = !increment;
-            }
-
-            var nextSquare = ((pointsNbr - 1) - i) % (squareLength) === 0;
-            if(nextSquare) {
-              x      += spacing / 2;
-              spacing = spacing / 2;
-            }
-          }
-        },
-
-        /**
-         * drawPoint
-         * @param  {Object} point  coordinate to draw
-         * @param  {Int} radius radius of the point
-         */
-        drawPoint : function(point, radius) {
-          var ctx = this.ctx;
-
-          this.points.push(point);
-
-          ctx.beginPath();
-          ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI, false);
-          ctx.fillStyle = 'rgba(52, 73, 94, 1)';
-          ctx.fill();
-          ctx.closePath();
-        },
-
-        /**
-         * drawLines
-         */
-        drawLines : function() {
-          var points       = this.points;
-          var pointsNbr    = points.length;
-          var squaresNbr   = 3;
-          var squareLength = pointsNbr / squaresNbr;
-          var notFirst,previousPoint, lastPoint;
-
-          _.each(points, function(point, index) {
-            notFirst = index !== 0;
-            if(notFirst) {
-              previousPoint = points[index-1];
-              if(index % squareLength !== 0) {
-                this.drawLine(previousPoint, point);
-              } else {
-                this.drawLine(points[index - squareLength], previousPoint);
-              }
-
-              oddPoint = index < (pointsNbr - squareLength) && index % 2 !== 0;
-              if(oddPoint) {
-                this.drawLine(point, points[index + squareLength]);
-              }
-
-              lastPoint = index === pointsNbr - 1;
-              if(lastPoint) {
-                this.drawLine(point, points[index - (squareLength - 1)]);
-              }
-            }
-          }, this);
-        },
-
-        /**
-         * drawLine
-         * @param  {Object} beginPoint coordinates of firstPoint
-         * @param  {Object} endPoint   coordinates of lastPoint
-         */
-        drawLine : function(beginPoint, endPoint) {
-          var ctx = this.ctx;
-          ctx.strokeStyle = 'rgba(52, 73, 94, .7)';
-          ctx.beginPath();
-          ctx.moveTo(beginPoint.x, beginPoint.y);
-          ctx.lineTo(endPoint.x, endPoint.y);
-          ctx.lineWidth = 3;
-          ctx.stroke();
-          ctx.closePath();
-        }
-      },
-
-      pieces: {
-        /**
-         * init
-         * @param  {documentElement} piecesCanvas canvas element
-         */
-        init : function(size, piecesCanvas) {
-          this.size   = size;
-          this.ctx    = piecesCanvas.getContext('2d');
-          this.radius = 17;
-          var that    = this;
-          piecesCanvas.addEventListener('click', function(event) {
-            that.isPieceSelected(event);
-
-          });
-        },
-
-        /**
-         * drawPiece
-         * @param  {Object} position  position where to draw the piece
-         */
-        drawPiece : function(position, currentPlayerMarker) {
-          var ctx = this.ctx;
-
-          var pointPosition = GAME.ui.board.points[position];
-          var piece = new Piece(pointPosition.x, pointPosition.y, currentPlayerMarker);
-
-          ctx.beginPath();
-          ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
-          ctx.fillStyle = (piece.marker === true) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
-          ctx.fill();
-          ctx.closePath();
-        },
-
-        /**
-         * isPieceSelected check if a point is selected and return it
-         * else return null
-         * @param  {Object}  position the click position
-         */
-        isPieceSelected : function(position) {
-          var xRange, yRange;
-          var radius = this.radius;
-          var pointFound, indexFound;
-
-          var isHuman = GAME.windmill.currentPlayer.type === 'human';
-          if(isHuman) {
-            _.each(GAME.ui.board.points, function(point, index) {
-              if(!pointFound) {
-                xRange = (position.offsetX >= (point.x - radius)) && (position.offsetX <= (point.x + radius));
-                yRange = (position.offsetY >= (point.y - radius)) && (position.offsetY <= (point.y + radius));
-
-                if(xRange && yRange) {
-                  pointFound = point;
-                  indexFound = index;
-                }
-              }
-            });
-
-            if(indexFound !== undefined) {
-              GAME.windmill.setPieceOnPosition(indexFound);
-            }
-          }
-        },
-
-        /**
-         * clear
-         */
-        clear : function() {
-          this.ctx.clearRect(0, 0, this.size, this.size);
-        },
-
-        /**
-         * clear a piece
-         * @param  {object} piece  piece to clear
-         */
-        clearPiece : function(piece) {
-          var radius = 17;
-          this.ctx.clearRect(piece.x - radius, piece.y - radius,
-                             radius * 2, radius * 2);
-        }
       }
     }
   };
@@ -530,24 +295,6 @@ angular.module('ngWindmill',[])
     FLYING:  {value: 2, name:'Flying'}
   };
 
-  var Point = Class.extend({
-    init : function(x, y) {
-      this.x      = x;
-      this.y      = y;
-    }
-  });
-
-  /**
-   * Simple class for piece management
-   * @type {[type]}
-   */
-  var Piece = Point.extend({
-    init : function(x, y, marker) {
-      this._super(x, y);
-      this.marker = marker || undefined;
-    }
-  });
-
   var Player = Class.extend({
     init: function(type, username, marker) {
       this.type          = type;
@@ -561,6 +308,12 @@ angular.module('ngWindmill',[])
   var Human = Player.extend({
     init: function(username, marker) {
       this._super('human', username, marker);
+    },
+    pickPosition: function(position) {
+      var aPieceIsSelected = UI.Pieces.isPieceSelected(position);
+      if(aPieceIsSelected !== undefined) {
+        GAME.windmill.setPieceOnPosition(aPieceIsSelected);
+      }
     }
   });
 
