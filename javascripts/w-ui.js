@@ -1,21 +1,7 @@
-var Point = Class.extend({
-  init : function(x, y) {
-    this.x      = x;
-    this.y      = y;
-  }
-});
-
 /**
- * Simple class for piece management
- * @type {[type]}
+ * Define all the UIs interactions on the game
+ * @type {Object}
  */
-var Piece = Point.extend({
-  init : function(x, y, marker) {
-    this._super(x, y);
-    this.marker = marker || undefined;
-  }
-});
-
 var UI = {
   init : function(boardSize) {
     this.size           = 600;
