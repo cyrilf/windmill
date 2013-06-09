@@ -23,7 +23,7 @@ angular.module('ngWindmill',[])
   var GAME = $scope.GAME = {
     windmill : {
       init : function() {
-        this.player1              = new Human('Daenerys', true);
+        this.player1              = new AI('Daenerys', true);
         this.player2              = new Human('Jon Snow', false);
         this.currentPlayer        = this.player1;
         this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
@@ -159,7 +159,7 @@ angular.module('ngWindmill',[])
         if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
           this.newGame();
         }
-      },    
+      },
       isSurrounded: function() {
         var opponent = !this.currentPlayer.marker;
         var playerMovement = 0;
@@ -631,7 +631,19 @@ angular.module('ngWindmill',[])
 
       return nearbyPiece;
     },
-    findPlacingPosition: function() {
+    findEmptyPositionWithNearbyPiece : function() {
+      var selectedPosition, nearbyPiece;
+
+      _.each(GAME.windmill.board, function(marker, position) {
+        if (marker === undefined && (selectedPosition === undefined || nearbyPiece === undefined)) {
+          selectedPosition = position;
+          nearbyPiece = this.findNearbyPieceFor(position);
+        }
+      })
+
+      return [selectedPosition, nearbyPiece]
+    },
+    findPlacingPosition : function() {
       var selectedPosition, dangerPosition;
       var weightedLines = this.setLinesWeight();
 
@@ -668,16 +680,33 @@ angular.module('ngWindmill',[])
       return selectedPosition;
     },
     findMovingPieceAndPosition: function() {
-      var selectedPiece, selectedPosition;
+      var selectedPiece, selectedPosition, dangerPosition;
 
       var weightedLines = this.setLinesWeight();
+
+      var dangerLine = this.dangerousEnemyLine();
+
+      if (dangerLine !== undefined) {
+        dangerPosition = this.pickEmptyPositionFromLine(dangerLine);
+      }
 
       if (!_.isEmpty(weightedLines)) {
         weightedLines = _.sortBy(weightedLines, function(line) { return -line[1]; });
         if (_.first(weightedLines)[1] === 2) {
           selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
-          selectedPiece = findNearbyPieceFor(selectedPosition);
+          selectedPiece = this.findNearbyPieceFor(selectedPosition);
         }
+      }
+
+      if ((selectedPosition === undefined || selectedPiece === undefined) && dangerPosition !== undefined) {
+        selectedPosition = dangerPosition;
+        selectedPiece = this.findNearbyPieceFor(selectedPosition);
+      }
+
+      if (selectedPosition === undefined || selectedPiece === undefined) {
+        var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
+        selectedPosition = __.first(emptyPositionAndNearbyPiece);
+        selectedPiece = __.last(emptyPositionAndNearbyPiece);
       }
 
       return [selectedPiece, selectedPosition];
