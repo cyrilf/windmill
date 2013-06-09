@@ -47,20 +47,11 @@ angular.module('ngWindmill',[])
                      [1, 9, 17], [3, 11, 19], [5, 13, 21], [7, 15, 23]];
       },
       run : function() {
-        this.checkPieces();
-
         var isAI = this.currentPlayer.type === 'AI'
         // If it's an AI he has to pick a position
         // If it's a human, we wait for him to click
         if(isAI) {
           var position = this.currentPlayer.pickPosition();
-        }
-      },
-      otherPlayer : function() {
-        if (this.currentPlayer === this.player1) {
-          return this.player2;
-        } else {
-          return this.player1;
         }
       },
       setPieceOnPosition : function(position) {
@@ -73,120 +64,213 @@ angular.module('ngWindmill',[])
           }
         }
       },
-      isValidPosition : function(position) {
-        var isBadPosition = position === undefined || this.board[position] !== undefined || position < 0 || position > (this.boardSize - 1);
-        return !isBadPosition;
-      },
-      isLineComplete : function(position) {
-        var result = false;
-        _.each(GAME.windmill.lines, function(line) {
-          if(_.contains(line, position)) {
-            if(GAME.windmill.board[line[0]] === GAME.windmill.board[line[1]] && GAME.windmill.board[line[1]] === GAME.windmill.board[line[2]]) {
-              result = true;
-            }
-          }
-        });
-        return result;
-      },
-      isDestructionOption : function(position) {
-        if (this.isLineComplete(position)) {
-          if (this.currentPlayer.type === 'AI') {
-            var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
-            if (pieceToBeDestroyed !== undefined) {
-              GAME.windmill.board[pieceToBeDestroyed] = undefined;
-              GAME.ui.pieces.clearPiece(GAME.ui.board.points[pieceToBeDestroyed]);
-            }
-          }
-        }
-      },
       checkGameState : function(position) {
         var currentPlayer  = this.currentPlayer;
-        var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
-        var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value;
-        var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value;
 
-        if(isPlacingPhase) {
-          this.board[position] = currentPlayer.marker;
-          GAME.ui.pieces.drawPiece(position);
-          currentPlayer.stockPieces--;
+        // if requireAnotherAction is set to true we can't pass to the next turn,
+        // we have to wait for the user (human) to do something else (i.g. choose a piece to destroy)
+        this.requireAnotherAction = this.requireAnotherAction || false;
 
-          this.isDestructionOption(position);
-
-          var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
-          if(playerHasNoPiecesInStock) {
-            currentPlayer.phase = PHASE.MOVING;
+        if(this.requireAnotherAction) {
+          if(this.requireAnotherAction === 'chooseEnemy') {
+            this.destroyPiece(position);
           }
-        } else if(isMovingPhase) {
-          var playerHasLessThanThreePieces = this.countPiecesOnBoard() === 3;
-          if(playerHasLessThanThreePieces) {
-            currentPlayer.phase = PHASE.FLYING;
-          } else {
+          this.requireAnotherAction = false;
+        } else {
+          if(this.getCurrentPhase() === PHASE.PLACING) {
+            this.board[position] = currentPlayer.marker;
+            GAME.ui.pieces.drawPiece(position);
+            currentPlayer.stockPieces--;
+
+            this.isDestructionOption(position);
+          } else if(this.getCurrentPhase() === PHASE.MOVING ) {
             this.board[position] = currentPlayer.marker;
             GAME.ui.pieces.drawPiece(position);
 
             this.isDestructionOption(position);
+          } else if(this.getCurrentPhase() === PHASE.FLYING) {
+            // Implement me (check for a valid movement)
           }
-        } else if(isFlyingPhase) {
-          // Implement me (check for a valid movement)
         }
 
-        this.endTurn();
+        if(!this.requireAnotherAction) {
+          this.endTurn();
+        }
       },
       endTurn : function() {
-        this.changePlayer();
-        this.isSurrounded();
-        //this.run();
-        setTimeout(function(_this) { $scope.$apply(_this.run()); }, 100, this);
+        this.updatePlayerPhase(); // Update the phase if necessary
+        var enemyHasLost = this.checkEnemyFail(); // Check if the enemy loose or not
+        if(enemyHasLost) {
+          this.newGame();
+        } else {
+          this.changePlayer();      // Change player
+          //this.run();
+          setTimeout(function(_this) { $scope.$apply(_this.run()); }, 100, this);
+        }
+      },
+      getCurrentPhase : function() {
+        var currentPlayer  = this.currentPlayer;
+
+        var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
+        if(isPlacingPhase)
+          return PHASE.PLACING;
+
+        var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value;
+        if(isMovingPhase)
+          return PHASE.MOVING;
+
+        var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value;
+        if(isFlyingPhase)
+          return PHASE.FLYING;
+      },
+      /**
+       * If necessary, update the player game phase
+       */
+      updatePlayerPhase : function() {
+        var currentPlayer  = this.currentPlayer;
+
+        if(this.getCurrentPhase() === PHASE.PLACING) {
+          var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
+          if(playerHasNoPiecesInStock) {
+            currentPlayer.phase = PHASE.MOVING;
+          }
+        } else if(this.getCurrentPhase() === PHASE.MOVING) {
+          var playerHasLessThanThreePieces = this.countPiecesOnBoard() === 3;
+          if(playerHasLessThanThreePieces) {
+            currentPlayer.phase = PHASE.FLYING;
+          }
+        }
+      },
+      /**
+       * After each turn, check if the enemy fails or not
+       */
+      checkEnemyFail : function() {
+        var hasLost = this.enemyHasLessThanThreePieces() || this.isEnemySurrounded();
+        return hasLost;
+      },
+      enemyHasLessThanThreePieces : function() {
+        var hasLessThanThreePieces = false;
+        var piecesOnBoard = this.countPiecesOnBoard(this.getEnemy());
+        if (piecesOnBoard + this.getEnemy().stockPieces < 3) {
+          hasLessThanThreePieces = true;
+        }
+
+        return hasLessThanThreePieces;
+      },
+      isEnemySurrounded: function() {
+        var isSurrounded = false;
+        var enemy = !this.currentPlayer.marker;
+        var enemyMovement = 0;
+        var fail = false;
+
+        _.each(this.board, function(marker, index) {
+          if(enemy === marker) {
+            _.each(this.graph, function(connection) {
+              var isPathFromCurrentPosition = _.contains(connection, index);
+              var neighborAvailable = this.board[_.without(connection, index)[0]] === undefined;
+              if (isPathFromCurrentPosition && neighborAvailable) {
+                enemyMovement++;
+              }
+            }, this);
+          }
+        }, this);
+
+        var enemyIsStuck = enemyMovement === 0;
+        var enemyNoPiecesInStock = this.getEnemy(this.currentPlayer).stockPieces === 0;
+        if(enemyIsStuck && enemyNoPiecesInStock) {
+          isSurrounded = true;
+        }
+
+        return isSurrounded;
+      },
+      countPiecesOnBoard: function(player) {
+        player = player || this.currentPlayer;
+        var piecesOnBoard = _.filter(this.board, function(marker) {
+          return marker === player.marker;
+        }, this).length;
+
+        return piecesOnBoard;
+      },
+      isValidPosition : function(position) {
+        var isBadPosition = position === undefined || position < 0 || position > (this.boardSize - 1);
+
+        if(this.requireAnotherAction) {
+          if(this.requireAnotherAction === 'chooseEnemy') {
+            var isNotEnemyPiece = this.board[position] !== !this.currentPlayer.marker;
+            var isEnemyPiece = !isNotEnemyPiece;
+            var lineEnemyComplete = isEnemyPiece && this.isLineComplete(position);
+
+            if(isNotEnemyPiece || lineEnemyComplete) {
+              isBadPosition = true;
+            }
+          }
+        } else {
+          isBadPosition = isBadPosition || this.board[position] !== undefined;
+        }
+
+        return !isBadPosition;
+      },
+      isLineComplete : function(position) {
+        var result = false;
+        _.each(this.lines, function(line) {
+          if(_.contains(line, position)) {
+            if(this.board[line[0]] === this.board[line[1]] && this.board[line[1]] === this.board[line[2]]) {
+              result = true;
+            }
+          }
+        }, this);
+        return result;
+      },
+      isDestructionOption : function(position) {
+        if (this.isLineComplete(position) && this.canRemoveEnemyPiece()) {
+          if (this.currentPlayer.type === 'AI') {
+            var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
+            if (pieceToBeDestroyed !== undefined) {
+              this.destroyPiece(pieceToBeDestroyed);
+            }
+          } else {
+            // Do something on the ui to say to the user to choose an enemy piece
+            this.requireAnotherAction = 'chooseEnemy';
+          }
+        }
+      },
+      destroyPiece : function(pieceToBeDestroyed) {
+        this.board[pieceToBeDestroyed] = undefined;
+        GAME.ui.pieces.clearPiece(GAME.ui.board.points[pieceToBeDestroyed]);
+      },
+      /**
+       * canRemoveEnemyPiece return true if an enemy piece can be remove
+       * It return false if no enemy piece can be remove (e.g. all enemy pieces are
+       * in an complete line)
+       * @return {[type]} [description]
+       */
+      canRemoveEnemyPiece: function() {
+        var result = false;
+        var isEnemyPiece, isLineIncomplete;
+        _.each(this.board, function(marker, index) {
+          isEnemyPiece  = marker === !this.currentPlayer.marker;
+          isLineIncomplete = !this.isLineComplete(index);
+          if (isEnemyPiece && isLineIncomplete) {
+            result = true;
+          }
+        }, this);
+
+        return result;
       },
       changePlayer : function() {
-        this.currentPlayer = this.getOpponent();
+        this.currentPlayer = this.getEnemy();
+      },
+      getEnemy: function() {
+        if(this.currentPlayer === this.player1)
+          return this.player2;
+        else
+          return this.player1;
       },
       newGame : function() {
         alert(this.currentPlayer.username);
         this.init();
         GAME.ui.init();
         this.run();
-      },
-      countPiecesOnBoard: function() {
-        var piecesOnBoard = _.filter(this.board, function(marker) {
-          return marker == this.currentPlayer.marker;
-        }, this).length;
-
-        return piecesOnBoard;
-      },
-      checkPieces : function() {
-        var piecesOnBoard = this.countPiecesOnBoard();
-        if (piecesOnBoard + this.currentPlayer.stockPieces < 3) {
-          this.newGame();
-        }
-      },
-      isSurrounded: function() {
-        var opponent = !this.currentPlayer.marker;
-        var playerMovement = 0;
-        var fail = false;
-
-        _.each(GAME.windmill.board, function(player, index) {
-          if(opponent === player)
-          {
-            _.each(GAME.windmill.graph, function(connection) {
-              if(_.contains(connection, index) && GAME.windmill.board[_.without(connection, index)[0]] === undefined) {
-                playerMovement++;
-              }
-            });
-          }
-        });
-
-        console.log(playerMovement);
-
-        var opponentNoMorePiecesinStock = this.getOpponent(this.currentPlayer).stockPieces === 0;
-        if(playerMovement === 0 && opponentNoMorePiecesinStock)
-          this.newGame();
-      },
-      getOpponent: function() {
-        if(this.currentPlayer === this.player1)
-          return this.player2;
-        else
-          return this.player1;
       }
     },
     ui : {
@@ -514,8 +598,7 @@ angular.module('ngWindmill',[])
         }
       }
       if (piecePosition !== undefined) {
-        GAME.windmill.board[piecePosition] = undefined;
-        GAME.ui.pieces.clearPiece(GAME.ui.board.points[piecePosition]);
+        GAME.windmill.destroyPiece(piecePosition);
       }
       GAME.windmill.setPieceOnPosition(position);
     },
