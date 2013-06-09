@@ -9,7 +9,7 @@ var Human = Player.extend({
   pickPosition: function(position) {
     var aPieceIsSelected = UI.Pieces.isPieceSelected(position);
     if(aPieceIsSelected !== undefined) {
-      GAME.windmill.setPieceOnPosition(aPieceIsSelected);
+      GAME.setPieceOnPosition(aPieceIsSelected);
     }
   }
 });

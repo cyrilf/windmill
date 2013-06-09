@@ -10,7 +10,7 @@ var AI = Player.extend({
     var position, piecePosition;
     var isFirstRound = this.stockPieces == 9;
     if (isFirstRound) {
-      position = _.random(GAME.windmill.boardSize - 1);
+      position = _.random(GAME.boardSize - 1);
     } else {
       switch(this.phase) {
         case PHASE.PLACING:
@@ -30,9 +30,9 @@ var AI = Player.extend({
       }
     }
     if (piecePosition !== undefined) {
-      GAME.windmill.destroyPiece(piecePosition);
+      GAME.destroyPiece(piecePosition);
     }
-    GAME.windmill.setPieceOnPosition(position);
+    GAME.setPieceOnPosition(position);
   },
   // The weight is the number of pieces (for the current player) on the line.
   // The more a line is heavy, the more it's a good strategy to try to complete it.
@@ -42,14 +42,14 @@ var AI = Player.extend({
     var weightedLines = [];
     var weight, ok;
 
-    _.each(GAME.windmill.lines, function(line, index) {
+    _.each(GAME.lines, function(line, index) {
       weight = 0;
       ok = true;
       _.each(line, function(element) {
         if (ok) {
-          if (GAME.windmill.board[element] === this.marker) {
+          if (GAME.board[element] === this.marker) {
             weight++;
-          } else if (GAME.windmill.board[element] === !this.marker) {
+          } else if (GAME.board[element] === !this.marker) {
             ok = false;
             weight = 0;
           }
@@ -63,11 +63,11 @@ var AI = Player.extend({
     return weightedLines;
   },
   pickEmptyPositionFromLine: function(lineIndex) {
-    var line = GAME.windmill.lines[lineIndex];
+    var line = GAME.lines[lineIndex];
     var selectedPosition;
 
     _.each(line, function(element) {
-      if (GAME.windmill.board[element] === undefined) {
+      if (GAME.board[element] === undefined) {
         selectedPosition = element;
       }
     })
@@ -77,8 +77,8 @@ var AI = Player.extend({
   getEmptyLine: function() {
     var emptyLine;
 
-    _.each(GAME.windmill.lines, function(line) {
-        if (GAME.windmill.board[line[0]] === undefined && GAME.windmill.board[line[1]] === undefined && GAME.windmill.board[line[2]] === undefined) {
+    _.each(GAME.lines, function(line) {
+        if (GAME.board[line[0]] === undefined && GAME.board[line[1]] === undefined && GAME.board[line[2]] === undefined) {
           emptyLine = line;
         }
     });
@@ -88,11 +88,11 @@ var AI = Player.extend({
   dangerousEnemyLine: function() {
     var sum, selectedLine;
 
-    _.each(GAME.windmill.lines, function(line, index) {
+    _.each(GAME.lines, function(line, index) {
       if (selectedLine === undefined) {
         sum = 0;
         _.each(line, function(element) {
-          if (GAME.windmill.board[element] === !this.marker) {
+          if (GAME.board[element] === !this.marker) {
             sum++;
           }
         }, this)
@@ -109,10 +109,10 @@ var AI = Player.extend({
     var selectedPiece;
 
     if (lineIndex !== undefined) {
-      var line = GAME.windmill.lines[lineIndex];
+      var line = GAME.lines[lineIndex];
 
       _.each(line, function(element) {
-        if (GAME.windmill.board[element] === !this.marker && !GAME.windmill.isLineComplete(element)) {
+        if (GAME.board[element] === !this.marker && !GAME.isLineComplete(element)) {
           selectedPiece = element;
         }
       }, this)
@@ -122,8 +122,8 @@ var AI = Player.extend({
   selectEnemyVulnerablePieceFromBoard : function() {
     var selectedPiece;
 
-    _.each(GAME.windmill.board, function(marker, index) {
-      if (marker === !this.marker && !GAME.windmill.isLineComplete(index)) {
+    _.each(GAME.board, function(marker, index) {
+      if (marker === !this.marker && !GAME.isLineComplete(index)) {
         selectedPiece = index;
       }
     }, this)
@@ -136,10 +136,10 @@ var AI = Player.extend({
   findNearbyPieceFor : function(position) {
     var nearbyPiece;
 
-    _.each(GAME.windmill.graph, function(element) {
-      if (element[0] === position && GAME.windmill.board[element[1]] === this.marker) {
+    _.each(GAME.graph, function(element) {
+      if (element[0] === position && GAME.board[element[1]] === this.marker) {
         nearbyPiece = element[1];
-      } else if (element[1] === position && GAME.windmill.board[element[0]] === this.marker) {
+      } else if (element[1] === position && GAME.board[element[0]] === this.marker) {
         nearbyPiece = element[0];
       }
     }, this)
@@ -149,7 +149,7 @@ var AI = Player.extend({
   findEmptyPositionWithNearbyPiece : function() {
     var selectedPosition, nearbyPiece;
 
-    _.each(GAME.windmill.board, function(marker, position) {
+    _.each(GAME.board, function(marker, position) {
       if (marker === undefined && (selectedPosition === undefined || nearbyPiece === undefined)) {
         selectedPosition = position;
         nearbyPiece = this.findNearbyPieceFor(position);
@@ -187,7 +187,7 @@ var AI = Player.extend({
         if (emptyLine !== undefined) {
           selectedPosition = _.shuffle(emptyLine)[0];
         } else {
-          selectedPosition = _.random(GAME.windmill.boardSize - 1);
+          selectedPosition = _.random(GAME.boardSize - 1);
         }
       }
     }
@@ -227,6 +227,6 @@ var AI = Player.extend({
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
-    return _.random(GAME.windmill.boardSize - 1);
+    return _.random(GAME.boardSize - 1);
   }
 });

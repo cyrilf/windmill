@@ -200,6 +200,7 @@ var UI = {
      * isPieceSelected check if a point is selected and return it
      * else return null
      * @param  {Object}  position the click position
+     * @return {Int}     return the position selected or undefined
      */
     isPieceSelected : function(position) {
       var xRange, yRange;
@@ -216,10 +217,6 @@ var UI = {
           }
         }
       });
-
-      // if(indexFound !== undefined) {
-      //   GAME.windmill.setPieceOnPosition(indexFound);
-      // }
 
       return indexFound;
     },
