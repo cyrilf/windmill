@@ -460,8 +460,8 @@ angular.module('ngWindmill',[])
         drawPiece : function(position, currentPlayerMarker) {
           var ctx = this.ctx;
 
-          var pointPosition = UI.board.points[piece];
-          piece = new Piece(pointPosition.x, pointPosition.y, currentPlayerMarker);
+          var pointPosition = GAME.ui.board.points[position];
+          var piece = new Piece(pointPosition.x, pointPosition.y, currentPlayerMarker);
 
           ctx.beginPath();
           ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
@@ -716,7 +716,7 @@ angular.module('ngWindmill',[])
           selectedPosition = position;
           nearbyPiece = this.findNearbyPieceFor(position);
         }
-      })
+      }, this)
 
       return [selectedPosition, nearbyPiece]
     },
@@ -782,8 +782,8 @@ angular.module('ngWindmill',[])
 
       if (selectedPosition === undefined || selectedPiece === undefined) {
         var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
-        selectedPosition = __.first(emptyPositionAndNearbyPiece);
-        selectedPiece = __.last(emptyPositionAndNearbyPiece);
+        selectedPosition = _.first(emptyPositionAndNearbyPiece);
+        selectedPiece = _.last(emptyPositionAndNearbyPiece);
       }
 
       return [selectedPiece, selectedPosition];
