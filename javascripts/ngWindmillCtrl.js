@@ -79,13 +79,13 @@ angular.module('ngWindmill',[])
         } else {
           if(this.getCurrentPhase() === PHASE.PLACING) {
             this.board[position] = currentPlayer.marker;
-            GAME.ui.pieces.drawPiece(position);
+            GAME.ui.pieces.drawPiece(position, currentPlayer.marker);
             currentPlayer.stockPieces--;
 
             this.isDestructionOption(position);
           } else if(this.getCurrentPhase() === PHASE.MOVING ) {
             this.board[position] = currentPlayer.marker;
-            GAME.ui.pieces.drawPiece(position);
+            GAME.ui.pieces.drawPiece(position, currentPlayer.marker);
 
             this.isDestructionOption(position);
           } else if(this.getCurrentPhase() === PHASE.FLYING) {
@@ -455,19 +455,13 @@ angular.module('ngWindmill',[])
 
         /**
          * drawPiece
-         * @param  {Object} piece OR position  piece to draw, or position
-         *                                     where to draw the piece
+         * @param  {Object} position  position where to draw the piece
          */
-        drawPiece : function(piece) {
+        drawPiece : function(position, currentPlayerMarker) {
           var ctx = this.ctx;
 
-          // If we receive a position in parameter,
-          // we create a piece from these informations
-          var pieceIsAPosition = !(piece instanceof Piece);
-          if(pieceIsAPosition) {
-            var pointPosition = GAME.ui.board.points[piece];
-            piece = new Piece(pointPosition.x, pointPosition.y, GAME.windmill.currentPlayer.marker);
-          }
+          var pointPosition = UI.board.points[piece];
+          piece = new Piece(pointPosition.x, pointPosition.y, currentPlayerMarker);
 
           ctx.beginPath();
           ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
