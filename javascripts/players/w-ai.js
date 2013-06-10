@@ -177,7 +177,8 @@ var AI = Player.extend({
   },
   // Returns : [[position, [piece, piece, ...]], [position, [piece, piece, ...]], ...]
   findAllEmptyPositionsWithNearbyPieces : function() {
-    var emptyPositions, nearbyPieces;
+    var nearbyPieces;
+    var emptyPositions = [];
 
     _.each(GAME.board, function(marker, position) {
       nearbyPieces = undefined;
@@ -191,8 +192,29 @@ var AI = Player.extend({
 
     return emptyPositions;
   },
-  checkNextRoundAttack : function() {
-    var nearbyPieces, currentPosition, selectedPosition, nearbyPiece;
+  // Returns : [[position, risk], [position, risk], ...]
+  defensivePieces : function() {
+    var totaltab = [];
+
+    _.each(GAME.board, function(marker, index) {
+      if (marker === this.marker && _.contains(GAME.intersection, index)) {
+        var total = 0;
+        _.each(GAME.lines, function(line) {
+          if (_.contains(line, index)){
+            var tab = _.map(line, function(element) { return GAME.board[element]; });
+            total += _.filter(tab, function(element) { return element === !this.marker; }).length;
+          }
+        });
+        totaltab.push([index, total]);
+      }
+    });
+
+    return totaltab;
+  },
+  prepareNextRoundAttack : function() {
+    var nearbyPieces, currentPosition, selectedPosition, selectedPiece, weightedLines, foundPosition, foundPiece;
+    var defensivePieces = _.filter(this.defensivePieces(), function(element) { return _.last(element) >= 3; });
+    defensivePieces = _.map(defensivePieces, function(element) { return _.first(element); });
 
     var emptyPositions = this.findAllEmptyPositionsWithNearbyPieces();
     var board = GAME.board;
@@ -202,17 +224,38 @@ var AI = Player.extend({
       nearbyPieces = _.last(position);
 
       _.each(nearbyPieces, function(piece) {
-        GAME.board[currentPosition] = this.marker;
-        GAME.board[piece] = undefined;
+        if (selectedPosition === undefined || selectedPiece === undefined) {
+          GAME.board[currentPosition] = this.marker;
+          GAME.board[piece] = undefined;
 
-        //faille ?
-          //attack possible ?
-      });
-    });
+          if (!_.contains(defensivePieces, piece)) {
+            weightedLines = this.setLinesWeight();
+
+            _.each(weightedLines, function(element) {
+              if (foundPosition === undefined || foundPiece === undefined) {
+                foundPosition = this.pickEmptyPositionFromLine(_.first(element));
+                tempPiece = this.findNearbyPieceFor(foundPosition);
+
+                GAME.board[foundPosition] = this.marker;
+                if (GAME.isLineComplete(foundPosition)) {
+                  foundPiece = tempPiece;
+                  selectedPosition = currentPosition;
+                  selectedPiece = piece;
+                }
+                GAME.board[foundPosition] = undefined;
+              }
+            }, this);
+          }
+        }
+
+        GAME.board[currentPosition] = board[currentPosition];
+        GAME.board[piece] = board[piece];
+      }, this);
+    }, this);
 
     GAME.board = board;
 
-    return [selectedPosition, nearbyPiece];
+    return [selectedPosition, selectedPiece];
   },
   findPlacingPosition : function() {
     var selectedPosition, dangerPosition;
@@ -251,9 +294,9 @@ var AI = Player.extend({
     return selectedPosition;
   },
   findMovingPieceAndPosition: function() {
-    var selectedPiece, selectedPosition, dangerPosition;
+    var selectedPiece, selectedPosition, dangerPosition, nextMove;
 
-    // GAME.board = [true, true, undefined, true, true, false, true, undefined, true, false, false, false, true, undefined, true, true, undefined, undefined, false, undefined, false, undefined, undefined, true]
+    // GAME.board = [false, undefined, undefined, true, undefined, undefined, undefined, undefined, true, true, true, false, true, false, true, true, true, undefined, undefined, false, true, false, false, false];
 
     var weightedLines = this.setLinesWeight();
 
@@ -264,7 +307,7 @@ var AI = Player.extend({
     }
 
     if (!_.isEmpty(weightedLines)) {
-      weightedLines = _.filter(weightedLines, function(line) { return line[1] === 2; })
+      weightedLines = _.filter(weightedLines, function(line) { return line[1] === 2; });
 
       _.each(weightedLines, function(element) {
         if (selectedPosition === undefined || selectedPiece === undefined) {
@@ -287,26 +330,12 @@ var AI = Player.extend({
       console.log('Defending on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
-    ///if (selectedPosition === undefined || selectedPiece === undefined) {
-    // Boucle sur la tableau
-    var totaltab = [];
-      _.each(GAME.board, function(player, index) {
-          if(player === true && _.contains(GAME.intersection, index))
-          {
-
-            var total = 0;
-            _.each(GAME.lines, function(line) {
-              if(_.contains(line, index)){
-                var tab = _.map(line, function(element){ return GAME.board[element]; });
-                total += _.filter(tab, function(element){ return element === false; }).length;
-              }
-            });
-            totaltab.push([index, total]);
-          }
-        });
-
-      console.log(totaltab);
-    //  }
+    if (selectedPosition === undefined || selectedPiece === undefined) {
+      nextMove = this.prepareNextRoundAttack();
+      selectedPosition = _.first(nextMove);
+      selectedPiece = _.last(nextMove);
+      console.log('Preparing next round on position ' + selectedPosition + ' with piece ' + selectedPiece);
+    }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
