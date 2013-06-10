@@ -232,6 +232,24 @@ var AI = Player.extend({
     }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
+    // Boucle sur la tableau
+      _.each(GAME.board, function(player, index) {
+          if(player === true && _.contains(GAME.intersection, index))
+          {
+            var totaltab[];
+            var total = 0;
+            _.each(GAME.lines, function(line) {
+              if(_.contains(line, index)){
+                var tab = _.map(line, function(element){ return GAME.board[element]; });
+                total += _.filter(tab, function(element){ return element === false; }).length;
+              }
+            });
+            totaltab.push([index, total]);
+          }
+        });
+      }
+
+    if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
       selectedPosition = _.first(emptyPositionAndNearbyPiece);
       selectedPiece = _.last(emptyPositionAndNearbyPiece);
