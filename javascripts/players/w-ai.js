@@ -146,6 +146,23 @@ var AI = Player.extend({
 
     return nearbyPiece;
   },
+  findAllNearbyPiecesFor : function(position) {
+    var nearbyPieces = [];
+
+    _.each(GAME.graph, function(element) {
+      if (element[0] === position && GAME.board[element[1]] === this.marker) {
+        if (!_.contains(nearbyPieces, element[1])) {
+          nearbyPieces.push(element[1]);
+        }
+      } else if (element[1] === position && GAME.board[element[0]] === this.marker) {
+        if (!_.contains(nearbyPieces, element[0])) {
+          nearbyPieces.push(element[0]);
+        }
+      }
+    }, this)
+
+    return nearbyPieces;
+  },
   findEmptyPositionWithNearbyPiece : function() {
     var selectedPosition, nearbyPiece;
 
@@ -156,7 +173,46 @@ var AI = Player.extend({
       }
     }, this)
 
-    return [selectedPosition, nearbyPiece]
+    return [selectedPosition, nearbyPiece];
+  },
+  // Returns : [[position, [piece, piece, ...]], [position, [piece, piece, ...]], ...]
+  findAllEmptyPositionsWithNearbyPieces : function() {
+    var emptyPositions, nearbyPieces;
+
+    _.each(GAME.board, function(marker, position) {
+      nearbyPieces = undefined;
+      if (marker === undefined) {
+        nearbyPieces = this.findAllNearbyPiecesFor(position);
+        if (nearbyPieces !== undefined) {
+          emptyPositions.push([position, nearbyPieces])
+        }
+      }
+    }, this)
+
+    return emptyPositions;
+  },
+  checkNextRoundAttack : function() {
+    var nearbyPieces, currentPosition, selectedPosition, nearbyPiece;
+
+    var emptyPositions = this.findAllEmptyPositionsWithNearbyPieces();
+    var board = GAME.board;
+
+    _.each(emptyPositions, function(position) {
+      currentPosition = _.first(position);
+      nearbyPieces = _.last(position);
+
+      _.each(nearbyPieces, function(piece) {
+        GAME.board[currentPosition] = this.marker;
+        GAME.board[piece] = undefined;
+
+        //faille ?
+          //attack possible ?
+      });
+    });
+
+    GAME.board = board;
+
+    return [selectedPosition, nearbyPiece];
   },
   findPlacingPosition : function() {
     var selectedPosition, dangerPosition;
