@@ -287,6 +287,27 @@ var AI = Player.extend({
       console.log('Defending on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
+    ///if (selectedPosition === undefined || selectedPiece === undefined) {
+    // Boucle sur la tableau
+    var totaltab = [];
+      _.each(GAME.board, function(player, index) {
+          if(player === true && _.contains(GAME.intersection, index))
+          {
+
+            var total = 0;
+            _.each(GAME.lines, function(line) {
+              if(_.contains(line, index)){
+                var tab = _.map(line, function(element){ return GAME.board[element]; });
+                total += _.filter(tab, function(element){ return element === false; }).length;
+              }
+            });
+            totaltab.push([index, total]);
+          }
+        });
+
+      console.log(totaltab);
+    //  }
+
     if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
       selectedPosition = _.first(emptyPositionAndNearbyPiece);

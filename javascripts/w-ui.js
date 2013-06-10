@@ -48,7 +48,7 @@ var UI = {
      */
     drawBackground : function() {
       var ctx       = this.ctx;
-      ctx.fillStyle = 'rgba(22, 160, 133, 1.0)';
+      ctx.fillStyle = COLORS.background;
       ctx.fillRect(0, 0, this.size, this.size);
     },
 
@@ -112,7 +112,7 @@ var UI = {
 
       ctx.beginPath();
       ctx.arc(point.x, point.y, radius, 0, 2 * Math.PI, false);
-      ctx.fillStyle = 'rgba(52, 73, 94, 1)';
+      ctx.fillStyle = COLORS.points;
       ctx.fill();
       ctx.closePath();
     },
@@ -157,7 +157,7 @@ var UI = {
      */
     drawLine : function(beginPoint, endPoint) {
       var ctx = this.ctx;
-      ctx.strokeStyle = 'rgba(52, 73, 94, .7)';
+      ctx.strokeStyle = COLORS.lines;
       ctx.beginPath();
       ctx.moveTo(beginPoint.x, beginPoint.y);
       ctx.lineTo(endPoint.x, endPoint.y);
@@ -191,7 +191,7 @@ var UI = {
 
       ctx.beginPath();
       ctx.arc(piece.x, piece.y, this.radius, 0, 2 * Math.PI, false);
-      ctx.fillStyle = (piece.marker === true) ? 'rgba(192, 57, 43,1.0)' : 'rgba(41, 128, 185,1.0)';
+      ctx.fillStyle = (piece.marker === true) ? COLORS.player1 : COLORS.player2;
       ctx.fill();
       ctx.closePath();
     },
@@ -221,6 +221,24 @@ var UI = {
       return indexFound;
     },
 
+    selectPiece : function(position) {
+      var ctx = this.ctx;
+      var pointPosition = UI.Board.points[position];
+
+      ctx.beginPath();
+      ctx.arc(pointPosition.x, pointPosition.y, this.radius, 0, 2 * Math.PI, false);
+      ctx.lineWidth   = 3;
+      ctx.strokeStyle = COLORS.selectedPiece;
+      ctx.stroke();
+      ctx.closePath();
+    },
+
+    unselectPiece : function(position, currentPlayerMarker) {
+      var pointPosition = UI.Board.points[position];
+      this.clearPiece(pointPosition, 19);
+      this.drawPiece(position, currentPlayerMarker);
+    },
+
     /**
      * clear
      */
@@ -232,8 +250,8 @@ var UI = {
      * clear a piece
      * @param  {object} piece  piece to clear
      */
-    clearPiece : function(piece) {
-      var radius = 17;
+    clearPiece : function(piece, radius) {
+      radius = radius || this.radius || 17;
       this.ctx.clearRect(piece.x - radius, piece.y - radius,
                          radius * 2, radius * 2);
     }
