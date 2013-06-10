@@ -231,12 +231,13 @@ var AI = Player.extend({
       console.log('Defending on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
-    if (selectedPosition === undefined || selectedPiece === undefined) {
+    ///if (selectedPosition === undefined || selectedPiece === undefined) {
     // Boucle sur la tableau
+    var totaltab = [];
       _.each(GAME.board, function(player, index) {
           if(player === true && _.contains(GAME.intersection, index))
           {
-            var totaltab[];
+
             var total = 0;
             _.each(GAME.lines, function(line) {
               if(_.contains(line, index)){
@@ -247,7 +248,9 @@ var AI = Player.extend({
             totaltab.push([index, total]);
           }
         });
-      }
+
+      console.log(totaltab);
+    //  }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
