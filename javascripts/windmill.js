@@ -214,12 +214,12 @@ var GAME = {
     return !isBadPosition;
   },
   isValidMovement : function(origin, destination) {
-    var result = false;
+    var result             = false;
     var originIsOwnPiece   = this.board[origin] === this.currentPlayer.marker;
     var destinationIsEmpty = this.board[destination] === undefined;
     var isMovingPhase      = this.currentPlayer.phase === PHASE.MOVING;
     var isFlyingPhase      = this.currentPlayer.phase === PHASE.FLYING;
-    var isNeighborPosition = true; //this.isNeighbor(origin, destination);
+    var isNeighborPosition = this.isNeighbor(origin, destination);
 
     if (originIsOwnPiece && destinationIsEmpty
         && ((isMovingPhase && isNeighborPosition) || isFlyingPhase)) {
@@ -236,6 +236,21 @@ var GAME = {
     UI.Pieces.unselectPiece(origin, currentMarker);
     UI.Pieces.clearPiece(UI.Board.points[origin]);
     UI.Pieces.drawPiece(destination, currentMarker);
+  },
+  isNeighbor : function(origin, destination) {
+    var isValid = false;
+
+    _.each(this.graph, function(element) {
+      if (!isValid) {
+        if (element[0] === origin && element[1] === destination) {
+          isValid = true;
+        } else if (element[1] === origin && element[0] === destination) {
+          isValid = true;
+        }
+      }
+    });
+
+    return isValid;
   },
   isLineComplete : function(position) {
     var result = false;
