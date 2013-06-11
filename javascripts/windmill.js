@@ -74,6 +74,9 @@ var GAME = {
         currentPlayer.stockPieces--;
 
         this.isDestructionOption(position);
+
+        // console.log('after destruction ' + JSON.stringify(GAME.board));
+        console.log('ok position ' + position);
       } else if(this.getCurrentPhase() === PHASE.MOVING ) {
         this.board[position] = currentPlayer.marker;
         UI.Pieces.drawPiece(position, currentPlayer.marker);
