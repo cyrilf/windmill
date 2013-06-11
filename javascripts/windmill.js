@@ -42,6 +42,7 @@ var GAME = {
     // If it's an AI he has to pick a position
     // If it's a human, we wait for him to click
     if(isAI) {
+      console.log('New turn board ' + JSON.stringify(GAME.board));
       var position = this.currentPlayer.pickPosition();
     }
   },
@@ -106,6 +107,7 @@ var GAME = {
     } else {
       this.changePlayer();      // Change player
       //this.run();
+      console.log('End turn board ' + JSON.stringify(GAME.board));
       setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, 100, this);
     }
   },

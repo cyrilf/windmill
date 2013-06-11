@@ -238,7 +238,6 @@ var AI = Player.extend({
     defensivePieces = _.map(defensivePieces, function(element) { return _.first(element); });
 
     var emptyPositions = this.findAllEmptyPositionsWithNearbyPieces();
-    var board = GAME.board;
 
     _.each(emptyPositions, function(position) {
       currentPosition = _.first(position);
@@ -269,14 +268,12 @@ var AI = Player.extend({
               }
             }, this);
           }
-        }
 
-        GAME.board[currentPosition] = board[currentPosition];
-        GAME.board[piece] = board[piece];
+          GAME.board[currentPosition] = undefined;
+          GAME.board[piece] = this.marker;
+        }
       }, this);
     }, this);
-
-    GAME.board = board;
 
     return [selectedPosition, selectedPiece];
   },
