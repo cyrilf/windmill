@@ -345,6 +345,12 @@ var AI = Player.extend({
     }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
+      // code Kévin
+      selectedPosition = undefined; // TODO
+      selectedPiece = undefined; // TODO
+    }
+
+    if (selectedPosition === undefined || selectedPiece === undefined) {
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
       selectedPosition = _.first(emptyPositionAndNearbyPiece);
       selectedPiece = _.last(emptyPositionAndNearbyPiece);
@@ -355,6 +361,25 @@ var AI = Player.extend({
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
-    return _.random(GAME.boardSize - 1);
+    // WIP
+    var selectedPiece, selectedPosition;
+
+    var weightedLines = this.setLinesWeight();
+
+    var dangerLine = this.dangerousEnemyLine();
+    if (dangerLine !== undefined) {
+      dangerPosition = this.pickEmptyPositionFromLine(dangerLine);
+    }
+
+    if (!_.isEmpty(weightedLines)) {
+      weightedLines = _.sortBy(weightedLines, function(line) { return -line[1]; });
+      if (_.first(weightedLines)[1] === 2) {
+        selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+      } else if (dangerPosition !== undefined) {
+        selectedPosition = dangerPosition;
+      } else {
+        selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+      }
+    }
   }
 });
