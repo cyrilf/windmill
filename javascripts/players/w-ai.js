@@ -7,7 +7,7 @@ var AI = Player.extend({
     this._super('AI', username, marker);
   },
   pickPosition: function() {
-    var position, piecePosition;
+    var position, piecePosition, pieceAndPosition;
     var isFirstRound = this.stockPieces == 9;
     if (isFirstRound) {
       position = _.random(GAME.boardSize - 1);
@@ -23,7 +23,7 @@ var AI = Player.extend({
           piecePosition = _.first(pieceAndPosition)
           break
         case PHASE.FLYING:
-          position = this.findFlyingPosition();
+          pieceAndPosition = this.findFlyingPosition();
 
           position = _.last(pieceAndPosition)
           piecePosition = _.first(pieceAndPosition)
