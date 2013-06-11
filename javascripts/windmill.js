@@ -192,7 +192,7 @@ var GAME = {
     var requireAnotherAction = this.requireAnotherAction;
 
     // Ask to be an empty position
-    if(hasToBeEmptyPosition === undefined && requireAnotherAction === undefined) {
+    if(hasToBeEmptyPosition === undefined && !requireAnotherAction) {
       hasToBeEmptyPosition = true;
     }
 
