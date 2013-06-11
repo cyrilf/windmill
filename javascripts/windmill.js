@@ -78,9 +78,11 @@ var GAME = {
         // console.log('after destruction ' + JSON.stringify(GAME.board));
         console.log('ok position ' + position);
       } else if(this.getCurrentPhase() === PHASE.MOVING ) {
-        this.board[position] = currentPlayer.marker;
-        UI.Pieces.drawPiece(position, currentPlayer.marker);
-
+        var isAI = this.currentPlayer.type === 'AI';
+        if(isAI) {
+          this.board[position] = currentPlayer.marker;
+          UI.Pieces.drawPiece(position, currentPlayer.marker);
+        }
         this.isDestructionOption(position);
       } else if(this.getCurrentPhase() === PHASE.FLYING) {
         // Implement me (check for a valid movement)
@@ -185,24 +187,70 @@ var GAME = {
 
     return piecesOnBoard;
   },
-  isValidPosition : function(position) {
+  isValidPosition : function(position, hasToBeEmptyPosition) {
     var isBadPosition = position === undefined || position < 0 || position > (this.boardSize - 1);
+    var requireAnotherAction = this.requireAnotherAction;
 
-    if(this.requireAnotherAction) {
-      if(this.requireAnotherAction === 'chooseEnemy') {
+    // Ask to be an empty position
+    if(hasToBeEmptyPosition === undefined && requireAnotherAction === undefined) {
+      hasToBeEmptyPosition = true;
+    }
+
+    if (requireAnotherAction) {
+      if (requireAnotherAction === 'chooseEnemy') {
         var isNotEnemyPiece = this.board[position] !== !this.currentPlayer.marker;
         var isEnemyPiece = !isNotEnemyPiece;
         var lineEnemyComplete = isEnemyPiece && this.isLineComplete(position);
 
-        if(isNotEnemyPiece || lineEnemyComplete) {
+        if (isNotEnemyPiece || lineEnemyComplete) {
           isBadPosition = true;
         }
       }
-    } else {
+    }
+    if (hasToBeEmptyPosition) {
       isBadPosition = isBadPosition || this.board[position] !== undefined;
     }
 
     return !isBadPosition;
+  },
+  isValidMovement : function(origin, destination) {
+    var result             = false;
+    var originIsOwnPiece   = this.board[origin] === this.currentPlayer.marker;
+    var destinationIsEmpty = this.board[destination] === undefined;
+    var isMovingPhase      = this.currentPlayer.phase === PHASE.MOVING;
+    var isFlyingPhase      = this.currentPlayer.phase === PHASE.FLYING;
+    var isNeighborPosition = this.isNeighbor(origin, destination);
+
+    if (originIsOwnPiece && destinationIsEmpty
+        && ((isMovingPhase && isNeighborPosition) || isFlyingPhase)) {
+      result = true;
+    }
+
+    return result;
+  },
+  movePiece : function(origin, destination) {
+    var currentMarker = this.currentPlayer.marker;
+    this.board[origin] = undefined;
+    this.board[destination] = currentMarker;
+
+    UI.Pieces.unselectPiece(origin, currentMarker);
+    UI.Pieces.clearPiece(UI.Board.points[origin]);
+    UI.Pieces.drawPiece(destination, currentMarker);
+  },
+  isNeighbor : function(origin, destination) {
+    var isValid = false;
+
+    _.each(this.graph, function(element) {
+      if (!isValid) {
+        if (element[0] === origin && element[1] === destination) {
+          isValid = true;
+        } else if (element[1] === origin && element[0] === destination) {
+          isValid = true;
+        }
+      }
+    });
+
+    return isValid;
   },
   isLineComplete : function(position) {
     var result = false;
@@ -242,7 +290,7 @@ var GAME = {
     var result = false;
     var isEnemyPiece, isLineIncomplete;
     _.each(this.board, function(marker, index) {
-      isEnemyPiece  = marker === !this.currentPlayer.marker;
+      isEnemyPiece     = marker === !this.currentPlayer.marker;
       isLineIncomplete = !this.isLineComplete(index);
       if (isEnemyPiece && isLineIncomplete) {
         result = true;
