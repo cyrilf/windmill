@@ -26,6 +26,7 @@ var AI = Player.extend({
           position = this.findFlyingPosition();
           break
         default:
+          console.log('SOMETHING WENT WRONG');
           position = this.findPlacingPosition();
       }
     }
@@ -216,6 +217,18 @@ var AI = Player.extend({
 
     return totaltab;
   },
+  findAnyPieceNotOnLine : function(lineIndex) {
+    var line = GAME.lines[lineIndex];
+    var selectedPiece;
+
+    _.each(GAME.board, function(marker, index) {
+      if (marker === this.marker && !_.contains(line, index)) {
+        selectedPiece = index;
+      }
+    }, this);
+
+    return selectedPiece;
+  },
   prepareNextRoundAttack : function() {
     var nearbyPieces, currentPosition, selectedPosition, selectedPiece, weightedLines, foundPosition, foundPiece;
     var defensivePieces = _.filter(this.defensivePieces(), function(element) { return _.last(element) >= 3; });
@@ -361,7 +374,6 @@ var AI = Player.extend({
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
-    // WIP
     var selectedPiece, selectedPosition;
 
     var weightedLines = this.setLinesWeight();
@@ -375,11 +387,25 @@ var AI = Player.extend({
       weightedLines = _.sortBy(weightedLines, function(line) { return -line[1]; });
       if (_.first(weightedLines)[1] === 2) {
         selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
-      } else if (dangerPosition !== undefined) {
-        selectedPosition = dangerPosition;
-      } else {
-        selectedPosition = this.pickEmptyPositionFromLine(_.first(weightedLines)[0]);
+        selectedPiece = this.findAnyPieceNotOnLine(_.first(weightedLines)[0]);
       }
     }
+
+    if ((selectedPosition === undefined || selectedPiece === undefined) && dangerPosition !== undefined) {
+      selectedPosition = dangerPosition;
+      selectedPiece = this.findAnyPieceNotOnLine(dangerLine);
+    }
+
+    if (selectedPosition === undefined || selectedPiece === undefined) {
+      _.each(weightedLines, function(element) {
+        if (selectedPosition === undefined || selectedPiece === undefined) {
+          selectedPosition = this.pickEmptyPositionFromLine(_.first(element));
+          selectedPiece = this.findAnyPieceNotOnLine(_.first(element));
+        }
+      }, this);
+    }
+
+    console.log('flying from ' + selectedPiece + ' to ' + selectedPosition);
+    return [selectedPiece, selectedPosition];
   }
 });
