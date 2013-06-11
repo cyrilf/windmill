@@ -374,7 +374,7 @@ var AI = Player.extend({
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
-    var selectedPiece, selectedPosition;
+    var selectedPiece, selectedPosition, dangerPosition;
 
     var weightedLines = this.setLinesWeight();
 
