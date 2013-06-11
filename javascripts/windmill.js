@@ -85,7 +85,12 @@ var GAME = {
         }
         this.isDestructionOption(position);
       } else if(this.getCurrentPhase() === PHASE.FLYING) {
-        // Implement me (check for a valid movement)
+        var isAI = this.currentPlayer.type === 'AI';
+        if(isAI) {
+          this.board[position] = currentPlayer.marker;
+          UI.Pieces.drawPiece(position, currentPlayer.marker);
+        }
+        this.isDestructionOption(position);
       }
     }
 

@@ -24,10 +24,13 @@ var AI = Player.extend({
           break
         case PHASE.FLYING:
           position = this.findFlyingPosition();
+
+          position = _.last(pieceAndPosition)
+          piecePosition = _.first(pieceAndPosition)
           break
         default:
           console.log('SOMETHING WENT WRONG');
-          position = this.findPlacingPosition();
+          pieceAndPosition = this.findPlacingPosition();
       }
     }
     if (piecePosition !== undefined) {
@@ -141,7 +144,7 @@ var AI = Player.extend({
   },
   findNearbyPieceFor : function(position) {
     var nearbyPiece;
-
+    console.log('DA FUCK ? ' + GAME.board);
     _.each(GAME.graph, function(element) {
       if (element[0] === position && GAME.board[element[1]] === this.marker) {
         nearbyPiece = element[1];
@@ -149,7 +152,7 @@ var AI = Player.extend({
         nearbyPiece = element[0];
       }
     }, this)
-
+    console.log('SHIT HAPPENS ' + nearbyPiece);
     return nearbyPiece;
   },
   findAllNearbyPiecesFor : function(position) {
@@ -177,7 +180,7 @@ var AI = Player.extend({
         selectedPosition = position;
         nearbyPiece = this.findNearbyPieceFor(position);
       }
-    }, this)
+    }, this);
 
     return [selectedPosition, nearbyPiece];
   },
