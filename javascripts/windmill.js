@@ -4,7 +4,7 @@ var GAME = {
     this.player1              = new AI('Daenerys', true);
     this.player2              = new Human('Jon Snow', false);
     this.currentPlayer        = this.player1;
-    this.noCatchCountdown     = 0; // 50 moves without a catch                                 = tie
+    this.catchCountdown       = 0; // 50 moves without a catch                                 = tie
     this.threePiecesCountdown = 0; // 10 moves when both players only have 10 pieces remaining = tie
     var boardSize             = 24;
     this.boardSize            = boardSize;
@@ -96,15 +96,20 @@ var GAME = {
     }
   },
   endTurn : function() {
-    this.updatePlayerPhase(this.getEnemy());  // Update the enemy phase, if necessary
-    var enemyHasLost = this.checkEnemyFail(); // Check if the enemy loose or not
-    if(enemyHasLost) {
-      this.newGame();
+    var tie = this.checkTie();
+    if(tie) {
+      this.newGame(tie);
     } else {
-      this.changePlayer(); // Change player
-      //this.run();
-      // Ugly hack to update the display..
-      setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, 100, this);
+      this.updatePlayerPhase(this.getEnemy());  // Update the enemy phase, if necessary
+      var enemyHasLost = this.checkEnemyFail(); // Check if the enemy loose or not
+      if(enemyHasLost) {
+        this.newGame();
+      } else {
+        this.changePlayer(); // Change player
+        //this.run();
+        // Ugly hack to update the display..
+        setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, 100, this);
+      }
     }
   },
   getCurrentPhase : function(player) {
@@ -139,6 +144,23 @@ var GAME = {
         player.phase = PHASE.FLYING;
       }
     }
+  },
+  /**
+   * After each turn, check if the game is in a tie state
+   */
+  checkTie : function() {
+    var result;
+
+    var isNotPlacingPhase = this.currentPlayer.phase !== PHASE.PLACING;
+    if(isNotPlacingPhase) {
+      this.catchCountdown += 1;
+    }
+
+    if(this.catchCountdown === 50) {
+      result = 'Tie: 50 moves without a catch';
+    }
+
+    return result;
   },
   /**
    * After each turn, check if the enemy fails or not
@@ -270,6 +292,8 @@ var GAME = {
   },
   isDestructionOption : function(position) {
     if (this.isLineComplete(position) && this.canRemoveEnemyPiece()) {
+      // We reset the catchCountdown when a mill is done
+      this.catchCountdown = 0;
       if (this.currentPlayer.type === 'AI') {
         var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
         if (pieceToBeDestroyed !== undefined) {
@@ -313,10 +337,10 @@ var GAME = {
     else
       return this.player1;
   },
-  newGame : function() {
-    alert(this.currentPlayer.username);
+  newGame : function(message) {
+    message = message || this.currentPlayer.username + ' has win !';
+    alert(message);
     this.init();
-    UI.init(this.boardSize);
     this.run();
   }
 };
