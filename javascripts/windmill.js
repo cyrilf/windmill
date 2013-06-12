@@ -1,15 +1,15 @@
 // var GAME = $scope.GAME = {
 var GAME = {
   init : function() {
-    this.player1              = new AI('Daenerys', true);
-    this.player2              = new Human('Jon Snow', false);
-    this.currentPlayer        = this.player1;
-    this.catchCountdown       = 0; // 50 moves without a catch                                 = tie
-    this.threePiecesCountdown = 0; // 10 moves when both players only have 10 pieces remaining = tie
-    var boardSize             = 24;
-    this.boardSize            = boardSize;
-    this.board                = [];
-    this.speed                = 1000;
+    this.player1        = new AI('Daenerys', true);
+    this.player2        = new Human('Jon Snow', false);
+    this.currentPlayer  = this.player1;
+    this.catchCountdown = 50; // 50 moves without a catch                                 = tie
+    this.finalCountdown = 10; // 10 moves when both players only have 3 pieces remaining  = tie
+    var boardSize       = 24;
+    this.boardSize      = boardSize;
+    this.board          = [];
+    this.speed          = 1000;
     while(boardSize--) this.board.push(undefined);
     this.graph = [
                     [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
@@ -153,11 +153,20 @@ var GAME = {
 
     var isNotPlacingPhase = this.currentPlayer.phase !== PHASE.PLACING;
     if(isNotPlacingPhase) {
-      this.catchCountdown += 1;
+      this.catchCountdown--;
     }
 
-    if(this.catchCountdown === 50) {
+    var isBothFlyingPhase = this.currentPlayer.phase === PHASE.FLYING
+                        &&  this.getEnemy().phase    === PHASE.FLYING;
+    if(isBothFlyingPhase) {
+      this.finalCountdown--;
+    }
+
+    if(this.catchCountdown === 0) {
       result = 'Tie: 50 moves without a catch';
+    }
+    if(this.finalCountdown === 0) {
+      result = 'Tie: 10 moves on the flying phase';
     }
 
     return result;
@@ -293,7 +302,7 @@ var GAME = {
   isDestructionOption : function(position) {
     if (this.isLineComplete(position) && this.canRemoveEnemyPiece()) {
       // We reset the catchCountdown when a mill is done
-      this.catchCountdown = 0;
+      this.catchCountdown = 50;
       if (this.currentPlayer.type === 'AI') {
         var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
         if (pieceToBeDestroyed !== undefined) {
