@@ -148,7 +148,9 @@ var GAME = {
    * After each turn, check if the enemy fails or not
    */
   checkEnemyFail : function() {
-    var hasLost = this.enemyHasLessThanThreePieces() || this.isEnemySurrounded();
+    var enemyIsNotInFlyingPhase = this.getEnemy().phase !== PHASE.FLYING;
+    var hasLost = this.enemyHasLessThanThreePieces() ||
+      (this.isEnemySurrounded() && enemyIsNotInFlyingPhase);
     return hasLost;
   },
   enemyHasLessThanThreePieces : function() {
