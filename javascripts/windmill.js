@@ -42,7 +42,6 @@ var GAME = {
     // If it's an AI he has to pick a position
     // If it's a human, we wait for him to click
     if(isAI) {
-      console.log('New turn board ' + JSON.stringify(GAME.board));
       var position = this.currentPlayer.pickPosition();
     }
   },
@@ -75,9 +74,6 @@ var GAME = {
         currentPlayer.stockPieces--;
 
         this.isDestructionOption(position);
-
-        // console.log('after destruction ' + JSON.stringify(GAME.board));
-        console.log('ok position ' + position);
       } else if(this.getCurrentPhase() === PHASE.MOVING ) {
         var isAI = this.currentPlayer.type === 'AI';
         if(isAI) {

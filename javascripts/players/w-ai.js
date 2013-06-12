@@ -29,13 +29,11 @@ var AI = Player.extend({
           piecePosition = _.first(pieceAndPosition)
           break
         default:
-          console.log('SOMETHING WENT WRONG');
           pieceAndPosition = this.findPlacingPosition();
       }
     }
     if (piecePosition !== undefined) {
       GAME.destroyPiece(piecePosition);
-      console.log('destroy ' + piecePosition);
     }
     GAME.setPieceOnPosition(position);
   },
@@ -144,7 +142,6 @@ var AI = Player.extend({
   },
   findNearbyPieceFor : function(position) {
     var nearbyPiece;
-    console.log('DA FUCK ? ' + GAME.board);
     _.each(GAME.graph, function(element) {
       if (element[0] === position && GAME.board[element[1]] === this.marker) {
         nearbyPiece = element[1];
@@ -152,7 +149,6 @@ var AI = Player.extend({
         nearbyPiece = element[0];
       }
     }, this)
-    console.log('SHIT HAPPENS ' + nearbyPiece);
     return nearbyPiece;
   },
   findAllNearbyPiecesFor : function(position) {
@@ -313,8 +309,6 @@ var AI = Player.extend({
   },
   findMovingPieceAndPosition: function() {
     var selectedPiece, selectedPosition, dangerPosition, nextMove;
-    console.log('before moving ' + JSON.stringify(GAME.board));
-    // GAME.board = [false, undefined, undefined, true, undefined, undefined, undefined, undefined, true, true, true, false, true, false, true, true, true, undefined, undefined, false, true, false, false, false];
 
     var weightedLines = this.setLinesWeight();
 
@@ -336,7 +330,6 @@ var AI = Player.extend({
           GAME.board[tempPiece] = undefined;
           if (GAME.isLineComplete(selectedPosition)) {
             selectedPiece = tempPiece;
-            console.log('Attacking on position ' + selectedPosition + ' with piece ' + selectedPiece);
           }
           GAME.board[selectedPosition] = undefined;
           GAME.board[tempPiece] = this.marker;
@@ -347,14 +340,12 @@ var AI = Player.extend({
     if ((selectedPosition === undefined || selectedPiece === undefined) && dangerPosition !== undefined) {
       selectedPosition = dangerPosition;
       selectedPiece = this.findNearbyPieceFor(selectedPosition);
-      console.log('Defending on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
       nextMove = this.prepareNextRoundAttack();
       selectedPosition = _.first(nextMove);
       selectedPiece = _.last(nextMove);
-      console.log('Preparing next round on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
     if (selectedPosition === undefined || selectedPiece === undefined) {
@@ -367,10 +358,8 @@ var AI = Player.extend({
       var emptyPositionAndNearbyPiece = this.findEmptyPositionWithNearbyPiece();
       selectedPosition = _.first(emptyPositionAndNearbyPiece);
       selectedPiece = _.last(emptyPositionAndNearbyPiece);
-      console.log('Random on position ' + selectedPosition + ' with piece ' + selectedPiece);
     }
 
-    console.log('Finally on position ' + selectedPosition + ' with piece ' + selectedPiece);
     return [selectedPiece, selectedPosition];
   },
   findFlyingPosition: function() {
@@ -405,7 +394,6 @@ var AI = Player.extend({
       }, this);
     }
 
-    console.log('flying from ' + selectedPiece + ' to ' + selectedPosition);
     return [selectedPiece, selectedPosition];
   }
 });
