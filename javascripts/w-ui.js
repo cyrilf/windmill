@@ -30,6 +30,7 @@ var UI = {
     init : function(size, boardCanvas, boardSize) {
       this.size      = size;
       this.ctx       = boardCanvas.getContext('2d');
+      // this.ctx.clearRect(0, 0, this.size, this.size);
       this.boardSize = boardSize;
       this.draw();
     },
@@ -176,6 +177,7 @@ var UI = {
       this.size         = size;
       this.piecesCanvas = piecesCanvas;
       this.ctx          = piecesCanvas.getContext('2d');
+      // this.ctx.clearRect(0, 0, this.size, this.size);
       this.radius       = 17;
     },
 

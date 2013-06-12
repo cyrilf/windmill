@@ -318,7 +318,6 @@ var GAME = {
   newGame : function() {
     alert(this.currentPlayer.username);
     this.init();
-    UI.init(this.boardSize);
     this.run();
   }
 };
