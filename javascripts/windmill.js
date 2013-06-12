@@ -9,6 +9,7 @@ var GAME = {
     var boardSize       = 24;
     this.boardSize      = boardSize;
     this.board          = [];
+    this.boardHistory   = []; // The board is the same for three times                    = tie
     this.speed          = 1000;
     while(boardSize--) this.board.push(undefined);
     this.graph = [
@@ -164,12 +165,31 @@ var GAME = {
 
     if(this.catchCountdown === 0) {
       result = 'Tie: 50 moves without a catch';
-    }
-    if(this.finalCountdown === 0) {
+    } else if(this.finalCountdown === 0) {
       result = 'Tie: 10 moves on the flying phase';
+    } else {
+      var placingPhaseIsOver = this.currentPlayer.stockPieces === 0
+                            && this.getEnemy().stockPieces    === 0;
+      if(placingPhaseIsOver) {
+        if(this.isBoardTheSameForThreeTimes()) {
+          result = 'Tie: The board is the same for three times';
+        } else {
+          this.boardHistory.push(this.board.toString());
+        }
+      }
     }
 
     return result;
+  },
+
+  isBoardTheSameForThreeTimes : function() {
+    var currentBoard = this.board.toString();
+    var countSameBoards = _.filter(this.boardHistory, function(board) {
+      return board === currentBoard;
+    }).length;
+
+    var threeTimes = countSameBoards == 2 ? true : false;
+    return threeTimes;
   },
   /**
    * After each turn, check if the enemy fails or not
@@ -303,6 +323,10 @@ var GAME = {
     if (this.isLineComplete(position) && this.canRemoveEnemyPiece()) {
       // We reset the catchCountdown when a mill is done
       this.catchCountdown = 50;
+      // We reset the board history, because board can't be the same
+      // with one less piece.
+      this.boardHistory   = [];
+
       if (this.currentPlayer.type === 'AI') {
         var pieceToBeDestroyed = this.currentPlayer.selectEnemyPiece();
         if (pieceToBeDestroyed !== undefined) {
