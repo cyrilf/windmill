@@ -100,47 +100,47 @@ var GAME = {
     }
   },
   endTurn : function() {
-    this.updatePlayerPhase(); // Update the phase if necessary
+    this.updatePlayerPhase(this.getEnemy());  // Update the enemy phase, if necessary
     var enemyHasLost = this.checkEnemyFail(); // Check if the enemy loose or not
     if(enemyHasLost) {
       this.newGame();
     } else {
-      this.changePlayer();      // Change player
+      this.changePlayer(); // Change player
       //this.run();
-      console.log('End turn board ' + JSON.stringify(GAME.board));
+      // Ugly hack to update the display..
       setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, 100, this);
     }
   },
-  getCurrentPhase : function() {
-    var currentPlayer  = this.currentPlayer;
+  getCurrentPhase : function(player) {
+    player  = player || this.currentPlayer;
 
-    var isPlacingPhase = currentPlayer.phase.value === PHASE.PLACING.value;
+    var isPlacingPhase = player.phase.value === PHASE.PLACING.value;
     if(isPlacingPhase)
       return PHASE.PLACING;
 
-    var isMovingPhase  = currentPlayer.phase.value === PHASE.MOVING.value;
+    var isMovingPhase  = player.phase.value === PHASE.MOVING.value;
     if(isMovingPhase)
       return PHASE.MOVING;
 
-    var isFlyingPhase  = currentPlayer.phase.value === PHASE.FLYING.value;
+    var isFlyingPhase  = player.phase.value === PHASE.FLYING.value;
     if(isFlyingPhase)
       return PHASE.FLYING;
   },
   /**
    * If necessary, update the player game phase
    */
-  updatePlayerPhase : function() {
-    var currentPlayer  = this.currentPlayer;
+  updatePlayerPhase : function(player) {
+    var player = player || this.currentPlayer;
 
-    if(this.getCurrentPhase() === PHASE.PLACING) {
-      var playerHasNoPiecesInStock = currentPlayer.stockPieces === 0;
+    if(this.getCurrentPhase(player) === PHASE.PLACING) {
+      var playerHasNoPiecesInStock = player.stockPieces === 0;
       if(playerHasNoPiecesInStock) {
-        currentPlayer.phase = PHASE.MOVING;
+        player.phase = PHASE.MOVING;
       }
-    } else if(this.getCurrentPhase() === PHASE.MOVING) {
-      var playerHasLessThanThreePieces = this.countPiecesOnBoard() === 3;
+    } else if(this.getCurrentPhase(player) === PHASE.MOVING) {
+      var playerHasLessThanThreePieces = this.countPiecesOnBoard(player) === 3;
       if(playerHasLessThanThreePieces) {
-        currentPlayer.phase = PHASE.FLYING;
+        player.phase = PHASE.FLYING;
       }
     }
   },
@@ -320,6 +320,7 @@ var GAME = {
   newGame : function() {
     alert(this.currentPlayer.username);
     this.init();
+    UI.init(this.boardSize);
     this.run();
   }
 };
