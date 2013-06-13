@@ -78,6 +78,23 @@
       padding: 9px;
     }
 
+    #winMessage {
+      padding: 18px;
+      margin-top: 2px;
+      margin-bottom: 2px;
+    }
+
+    .btn-win {
+      border: none;
+      background-color: rgba( 39, 174,  96, 1) !important;
+      color: rgba(236, 240, 241,1.0);
+      padding: 9px 12px 10px;
+      line-height: 22px;
+      border-radius: 6px;
+      margin-bottom: 3px;
+      margin-top: 3px;
+    }
+
     canvas {
       position: absolute;
     }
@@ -93,10 +110,18 @@
       </div>
       <p class="lead">Try to beat the AI.</p>
       <div id='game-infos'>
-        <div class='game-info'>{{GAME.currentPlayer.username}} is playing</div>
-        <div class='game-info game-info-right'>{{GAME.currentPlayer.phase.name}}</div>
-        <div class='clear'></div>
-        <div class='message' ng-show="GAME.hasToDestroyEnemyPiece">Choose an enemy piece to remove</div>
+        <div ng-hide='GAME.newGameButton'>
+          <div class='game-info'>{{GAME.currentPlayer.username}} is playing</div>
+          <div class='game-info game-info-right'>{{GAME.currentPlayer.phase.name}}</div>
+          <div class='clear'></div>
+          <div class='message' ng-show="GAME.hasToDestroyEnemyPiece">Choose an enemy piece to remove</div>
+        </div>
+        <div id='new-game' ng-show="GAME.newGameButton">
+          <div id='winMessage'>
+            {{GAME.winMessage}}
+          </div>
+          <button class='btn-win' ng-click='GAME.newGame()'>New game</button>
+        </div>
       </div>
       <!-- <p>{{GAME.currentPlayer.stockPieces}} pieces in his hand.</p> -->
 

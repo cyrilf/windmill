@@ -2,8 +2,10 @@
 var GAME = {
   init : function() {
     this.player1        = new AI('Daenerys', true);
-    this.player2        = new Human('Jon Snow', false);
+    this.player2        = new AI('Jon Snow', false);
     this.currentPlayer  = this.player1;
+    this.winMessage     = false;
+    this.newGameButton  = false;
     this.catchCountdown = 50; // 50 moves without a catch                                 = tie
     this.finalCountdown = 10; // 10 moves when both players only have 3 pieces remaining  = tie
     var boardSize       = 24;
@@ -28,7 +30,6 @@ var GAME = {
     UI.init(this.boardSize);
 
     // When user click on canvas to play
-    UI.Pieces.piecesCanvas.removeEventListener('click', this.listenClick);
     UI.Pieces.piecesCanvas.addEventListener('click', this.listenClick);
 
     this.run();
@@ -98,12 +99,12 @@ var GAME = {
   endTurn : function() {
     var tie = this.checkTie();
     if(tie) {
-      this.newGame(tie);
+      this.endGame(tie);
     } else {
       this.updatePlayerPhase(this.getEnemy());  // Update the enemy phase, if necessary
       var enemyHasLost = this.checkEnemyFail(); // Check if the enemy loose or not
       if(enemyHasLost) {
-        this.newGame();
+        this.endGame();
       } else {
         this.changePlayer(); // Change player
         //this.run();
@@ -368,9 +369,15 @@ var GAME = {
     else
       return this.player1;
   },
-  newGame : function(message) {
-    message = message || this.currentPlayer.username + ' has win !';
-    alert(message);
+  endGame : function(message) {
+    this.newGameButton = true;
+    this.winMessage = message || this.currentPlayer.username + ' has win !';
+    UI.Pieces.piecesCanvas.removeEventListener('click', this.listenClick);
+    this.$scope.$apply();
+  },
+
+  newGame : function() {
+    this.newGameButton = false;
     this.init();
     this.run();
   }
