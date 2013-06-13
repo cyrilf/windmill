@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html ng-app="ngWindmill" ng-controller='ngWindmillCtrl'>
+<html ng-app="ngWindmill" ng-controller='ngWindmillCtrl' ng-cloak>
 <head>
   <title>{{title}}</title>
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -8,10 +8,16 @@
 
   <!-- CSS -->
   <link href="https://netdna.bootstrapcdn.com/twitter-bootstrap/2.3.2/css/bootstrap-combined.min.css" rel="stylesheet">
+  <link href='http://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet' type='text/css'>
   <style type="text/css">
+    [ng\:cloak], [ng-cloak], .ng-cloak {
+      display: none !important;
+    }
+
     html,
     body {
       height: 100%;
+      background: rgba(236, 240, 241,.1);
     }
 
     #wrap {
@@ -23,9 +29,8 @@
 
     #footer {
       height: 60px;
-    }
-    #footer {
-      background-color: #f5f5f5;
+      background-color: rgba(189, 195, 199, .3);
+      color: rgba(236, 240, 241,1.0) !important;
     }
 
     @media (max-width: 767px) {
@@ -39,10 +44,38 @@
 
     .container {
       width: auto;
-      max-width: 680px;
+      max-width: 600px;
     }
     .container .credit {
       margin: 20px 0;
+    }
+
+    .clear {
+      clear: both;
+    }
+
+    #game-infos {
+      background: rgba(52, 73, 94,1.0);
+      color: rgba(236, 240, 241,1.0);
+      text-align: center;
+      font-size: 20px;
+      font-family: 'Open Sans', sans-serif;
+      height: auto;
+    }
+
+    .game-info {
+      float: left;
+      width: 279px;
+      padding: 10px;
+    }
+
+    .game-info-right {
+      border-left: 2px solid rgba(236, 240, 241,1.0);
+    }
+
+    .message {
+      border-top: 2px solid rgba(236, 240, 241,1.0);
+      padding: 9px;
     }
 
     canvas {
@@ -59,8 +92,14 @@
         <h1>{{title}}</h1>
       </div>
       <p class="lead">Try to beat the AI.</p>
-      <p>{{GAME.currentPlayer.username}} is playing.</p>
-      <p>{{GAME.currentPlayer.stockPieces}} pieces in his hand.</p>
+      <div id='game-infos'>
+        <div class='game-info'>{{GAME.currentPlayer.username}} is playing</div>
+        <div class='game-info game-info-right'>{{GAME.currentPlayer.phase.name}}</div>
+        <div class='clear'></div>
+        <div class='message' ng-show="GAME.hasToDestroyEnemyPiece">Choose an enemy piece to remove</div>
+      </div>
+      <!-- <p>{{GAME.currentPlayer.stockPieces}} pieces in his hand.</p> -->
+
       <canvas id="board"></canvas>
       <canvas id="pieces"></canvas>
     </div>

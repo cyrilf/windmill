@@ -10,7 +10,7 @@ var GAME = {
     this.boardSize      = boardSize;
     this.board          = [];
     this.boardHistory   = []; // The board is the same for three times                    = tie
-    this.speed          = 1000;
+    this.speed          = 100;
     while(boardSize--) this.board.push(undefined);
     this.graph = [
                     [0, 1], [1, 2], [2, 3], [3, 4], [4, 5], [5, 6], [6, 7], [7, 0],
@@ -108,7 +108,7 @@ var GAME = {
         this.changePlayer(); // Change player
         //this.run();
         // Ugly hack to update the display..
-        setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, 100, this);
+        setTimeout(function(_this) { GAME.$scope.$apply(_this.run());}, GAME.speed, this);
       }
     }
   },
@@ -332,6 +332,7 @@ var GAME = {
       } else {
         // Do something on the ui to say to the user to choose an enemy piece
         this.hasToDestroyEnemyPiece = true;
+        GAME.$scope.$apply();
       }
     }
   },
