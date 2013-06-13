@@ -10,9 +10,9 @@
   pickPosition: function(position) {
     var pieceSelected = UI.Pieces.isPieceSelected(position);
 
-    var requireAnotherAction = GAME.requireAnotherAction;
+    var hasToDestroyEnemyPiece = GAME.hasToDestroyEnemyPiece;
     if (pieceSelected !== undefined) {
-      if (this.phase === PHASE.PLACING || requireAnotherAction) {
+      if (this.phase === PHASE.PLACING || hasToDestroyEnemyPiece) {
         GAME.setPieceOnPosition(pieceSelected);
       } else if (this.phase === PHASE.MOVING
         || this.phase === PHASE.FLYING) {

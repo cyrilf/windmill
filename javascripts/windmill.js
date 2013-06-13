@@ -59,15 +59,13 @@ var GAME = {
   checkGameState : function(position) {
     var currentPlayer  = this.currentPlayer;
 
-    // if requireAnotherAction is set to true we can't pass to the next turn,
+    // if hasToDestroyEnemyPiece is set to true we can't pass to the next turn,
     // we have to wait for the user (human) to do something else (i.g. choose a piece to destroy)
-    this.requireAnotherAction = this.requireAnotherAction || false;
+    this.hasToDestroyEnemyPiece = this.hasToDestroyEnemyPiece || false;
 
-    if(this.requireAnotherAction) {
-      if(this.requireAnotherAction === 'chooseEnemy') {
-        this.destroyPiece(position);
-      }
-      this.requireAnotherAction = false;
+    if(this.hasToDestroyEnemyPiece) {
+      this.destroyPiece(position);
+      this.hasToDestroyEnemyPiece = false;
     } else {
       if(this.getCurrentPhase() === PHASE.PLACING) {
         this.board[position] = currentPlayer.marker;
@@ -92,7 +90,7 @@ var GAME = {
       }
     }
 
-    if(!this.requireAnotherAction) {
+    if(!this.hasToDestroyEnemyPiece) {
       this.endTurn();
     }
   },
@@ -245,22 +243,20 @@ var GAME = {
   },
   isValidPosition : function(position, hasToBeEmptyPosition) {
     var isBadPosition = position === undefined || position < 0 || position > (this.boardSize - 1);
-    var requireAnotherAction = this.requireAnotherAction;
+    var hasToDestroyEnemyPiece = this.hasToDestroyEnemyPiece;
 
     // Ask to be an empty position
-    if(hasToBeEmptyPosition === undefined && !requireAnotherAction) {
+    if(hasToBeEmptyPosition === undefined && !hasToDestroyEnemyPiece) {
       hasToBeEmptyPosition = true;
     }
 
-    if (requireAnotherAction) {
-      if (requireAnotherAction === 'chooseEnemy') {
-        var isNotEnemyPiece = this.board[position] !== !this.currentPlayer.marker;
-        var isEnemyPiece = !isNotEnemyPiece;
-        var lineEnemyComplete = isEnemyPiece && this.isLineComplete(position);
+    if (hasToDestroyEnemyPiece) {
+      var isNotEnemyPiece = this.board[position] !== !this.currentPlayer.marker;
+      var isEnemyPiece = !isNotEnemyPiece;
+      var lineEnemyComplete = isEnemyPiece && this.isLineComplete(position);
 
-        if (isNotEnemyPiece || lineEnemyComplete) {
-          isBadPosition = true;
-        }
+      if (isNotEnemyPiece || lineEnemyComplete) {
+        isBadPosition = true;
       }
     }
     if (hasToBeEmptyPosition) {
@@ -334,7 +330,7 @@ var GAME = {
         }
       } else {
         // Do something on the ui to say to the user to choose an enemy piece
-        this.requireAnotherAction = 'chooseEnemy';
+        this.hasToDestroyEnemyPiece = true;
       }
     }
   },
