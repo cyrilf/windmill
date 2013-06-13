@@ -2,7 +2,7 @@
 var GAME = {
   init : function() {
     this.player1        = new AI('Daenerys', true);
-    this.player2        = new AI('Jon Snow', false);
+    this.player2        = new Human('Jon Snow', false);
     this.currentPlayer  = this.player1;
     this.winMessage     = false;
     this.newGameButton  = false;
@@ -371,7 +371,7 @@ var GAME = {
   },
   endGame : function(message) {
     this.newGameButton = true;
-    this.winMessage = message || this.currentPlayer.username + ' has win !';
+    this.winMessage = message || this.currentPlayer.username + ' won!';
     UI.Pieces.piecesCanvas.removeEventListener('click', this.listenClick);
     this.$scope.$apply();
   },
