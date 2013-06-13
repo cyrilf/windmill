@@ -28,15 +28,16 @@ var GAME = {
     UI.init(this.boardSize);
 
     // When user click on canvas to play
-    var that = this;
-    UI.Pieces.piecesCanvas.addEventListener('click', function(event) {
-      var isHuman = that.currentPlayer.type === 'human';
-      if(isHuman) {
-        that.currentPlayer.pickPosition(event);
-      }
-    });
+    UI.Pieces.piecesCanvas.removeEventListener('click', this.listenClick);
+    UI.Pieces.piecesCanvas.addEventListener('click', this.listenClick);
 
     this.run();
+  },
+  listenClick : function(event) {
+    var isHuman = GAME.currentPlayer.type === 'human';
+    if(isHuman) {
+      GAME.currentPlayer.pickPosition(event);
+    }
   },
   run : function() {
     var isAI = this.currentPlayer.type === 'AI'
