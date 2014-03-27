@@ -1,9 +1,10 @@
 // var GAME = $scope.GAME = {
 var GAME = {
   init : function() {
-    this.player1        = new AI('Daenerys', true);
-    this.player2        = new Human('Jon Snow', false);
-    this.currentPlayer  = this.player1;
+    this.players        = [];
+    this.players[0]     = new AI('Daenerys', true);
+    this.players[1]     = new Human('Jon Snow', false);
+    this.currentPlayer  = this.players[Math.round(Math.random())];
     this.winMessage     = false;
     this.newGameButton  = false;
     this.catchCountdown = 50; // 50 moves without a catch                                 = tie
@@ -364,10 +365,10 @@ var GAME = {
     this.currentPlayer = this.getEnemy();
   },
   getEnemy: function() {
-    if(this.currentPlayer === this.player1)
-      return this.player2;
+    if(this.currentPlayer === this.players[0])
+      return this.players[1];
     else
-      return this.player1;
+      return this.players[0];
   },
   endGame : function(message) {
     this.newGameButton = true;
